@@ -8,7 +8,32 @@
                 "num_eps_per_iter": 50,
                 "horizon": null,
                 "discount": 0.99,
-                "use_whitening": false,
+                "normalize_return": true,
+                "use_baseline": true
+            }
+        },
+        "ac": {
+            "action_std": 0.1,
+            "train_config": {
+                "lr": 1e-3,
+                "num_iters": 50,
+                "num_eps_per_iter": 50,
+                "horizon": null,
+                "discount": 0.99,
+                "normalize_advantage": false
+            }
+        }
+    },
+    "BipedalWalker-v3": {
+        "pg": {
+            "action_std": 0.1,
+            "train_config": {
+                "lr": 1e-3,
+                "num_iters": 1000,
+                "num_eps_per_iter": 50,
+                "horizon": null,
+                "discount": 0.99,
+                "normalize_return": true,
                 "use_baseline": true
             }
         }

@@ -8,13 +8,14 @@ import torch
 import gym
 
 from models.pg import PolicyGradient
+from models.ac import ActorCritic
 
 
 def main(env_name, model_name):
     if not os.path.isdir(".ckpts"):
         os.mkdir(".ckpts")
     
-    if model_name not in ["pg", "trpo"]:
+    if model_name not in ["pg", "ac"]:
         print("The model name is wrong!")
         return
     
@@ -47,7 +48,10 @@ def main(env_name, model_name):
     # action_low = np.min(env.action_space.low)
     # action_range = np.maximum(np.abs(action_high), np.abs(action_low))
 
-    model = PolicyGradient(state_dim, action_dim, discrete, **config)
+    if model_name == "pg":
+        model = PolicyGradient(state_dim, action_dim, discrete, **config)
+    elif model_name == "ac":
+        model = ActorCritic(state_dim, action_dim, discrete, **config)
     results = model.train(env)
     
     env.close()
@@ -72,7 +76,7 @@ if __name__ == "__main__":
         "--model_name",
         type=str,
         default="pg",
-        help="Type the model name to train. The possible models are [pg, trpo]"
+        help="Type the model name to train. The possible models are [pg, ac]"
     )
     args = parser.parse_args()
 

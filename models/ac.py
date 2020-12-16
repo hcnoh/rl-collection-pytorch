@@ -46,7 +46,7 @@ class ActorCritic:
         num_eps_per_iter = self.train_config["num_eps_per_iter"]
         horizon = self.train_config["horizon"]
         discount = self.train_config["discount"]
-        use_whitening = self.train_config["use_whitening"]
+        normalize_advantage = self.train_config["normalize_advantage"]
 
         opt_pi = torch.optim.Adam(self.pi.parameters(), lr)
         opt_v = torch.optim.Adam(self.v.parameters(), lr)
@@ -101,24 +101,21 @@ class ActorCritic:
 
                 obs = torch.FloatTensor(obs)
                 acts = torch.FloatTensor(np.array(acts))
+                rwds = torch.FloatTensor(rwds)
 
                 disc = torch.FloatTensor(disc)
-
-                disc_rets = torch.FloatTensor(
-                    [sum(disc_rwds[i:]) for i in range(len(disc_rwds))]
-                )
-                rets = disc_rets / disc
-                
-                if use_whitening:
-                    rets = (rets - rets.mean()) / rets.std()
                 
                 self.v.eval()
-                delta = (rets - self.v(obs)).detach()
+                curr_vals = self.v(obs)
+                next_vals = torch.cat((self.v(obs)[1:], torch.FloatTensor([[0.]])))
+                advantage = (rwds + discount * next_vals - curr_vals).detach()
+                if normalize_advantage:
+                    advantage = (advantage - advantage.mean()) / advantage.std()
 
                 self.v.train()
 
                 opt_v.zero_grad()
-                loss = (-1) * disc * delta * self.v(obs)
+                loss = (-1) * disc * advantage * self.v(obs)
                 loss.mean().backward()
                 opt_v.step()
 
@@ -133,7 +130,7 @@ class ActorCritic:
                     m = torch.distributions.MultivariateNormal(mean, cov_mtx)
                 
                 opt_pi.zero_grad()
-                loss = (-1) * disc * delta * m.log_prob(acts)
+                loss = (-1) * disc * advantage * m.log_prob(acts)
                 loss.mean().backward()
                 opt_pi.step()
 

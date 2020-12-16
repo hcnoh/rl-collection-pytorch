@@ -84,7 +84,7 @@ class PolicyGradient:
         num_eps_per_iter = self.train_config["num_eps_per_iter"]
         horizon = self.train_config["horizon"]
         discount = self.train_config["discount"]
-        use_whitening = self.train_config["use_whitening"]
+        normalize_return = self.train_config["normalize_return"]
         use_baseline = self.train_config["use_baseline"]
 
         opt = torch.optim.Adam(self.pi.parameters(), lr)
@@ -149,7 +149,7 @@ class PolicyGradient:
                 )
                 rets = disc_rets / disc
                 
-                if use_whitening:
+                if normalize_return:
                     rets = (rets - rets.mean()) / rets.std()
                 
                 if use_baseline:
