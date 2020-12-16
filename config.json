@@ -1,0 +1,16 @@
+{
+    "CartPole-v1": {
+        "pg": {
+            "action_std": 0.1,
+            "train_config": {
+                "lr": 1e-3,
+                "num_iters": 50,
+                "num_eps_per_iter": 50,
+                "horizon": null,
+                "discount": 0.99,
+                "use_whitening": false,
+                "use_baseline": true
+            }
+        }
+    }
+}
