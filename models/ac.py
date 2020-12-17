@@ -28,9 +28,10 @@ class ActorCritic:
 
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         self.v = ValueNetwork(self.state_dim)
+        
         if torch.cuda.is_available():
-            self.pi.to(torch.device("cuda"))
-            self.v.to(torch.device("cuda"))
+            for net in self.get_networks():
+                net.to(torch.device("cuda"))
     
     def get_networks(self):
         return [self.pi, self.v]
@@ -43,12 +44,12 @@ class ActorCritic:
         if self.discrete:
             probs = self.pi(state)
             m = torch.distributions.Categorical(probs)
-            action = m.sample().detach().numpy()
         else:
             mean = self.pi(state)
             cov_mtx = torch.eye(self.action_dim) * (self.action_std ** 2)
             m = torch.distributions.MultivariateNormal(mean, cov_mtx)
-            action = m.sample().detach().numpy()
+        
+        action = m.sample().detach().cpu().numpy()
 
         return action
     

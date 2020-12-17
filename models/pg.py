@@ -2,6 +2,12 @@ import numpy as np
 import scipy
 import torch
 
+if torch.cuda.is_available():
+    from torch.cuda import FloatTensor
+    torch.set_default_tensor_type(torch.cuda.FloatTensor)
+else:
+    from torch import FloatTensor
+
 
 class PolicyNetwork(torch.nn.Module):
     def __init__(self, state_dim, action_dim, discrete):
@@ -60,6 +66,10 @@ class PolicyGradient:
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         if self.train_config["use_baseline"]:
             self.v = ValueNetwork(self.state_dim)
+        
+        if torch.cuda.is_available():
+            for net in self.get_networks():
+                net.to(torch.device("cuda"))
     
     def get_networks(self):
         if self.train_config["use_baseline"]:
@@ -70,17 +80,17 @@ class PolicyGradient:
     def act(self, state):
         self.pi.eval()
 
-        state = torch.FloatTensor(state)
+        state = FloatTensor(state)
 
         if self.discrete:
             probs = self.pi(state)
             m = torch.distributions.Categorical(probs)
-            action = m.sample().detach().numpy()
         else:
             mean = self.pi(state)
             cov_mtx = torch.eye(self.action_dim) * (self.action_std ** 2)
             m = torch.distributions.MultivariateNormal(mean, cov_mtx)
-            action = m.sample().detach().numpy()
+        
+        action = m.sample().detach().cpu().numpy()
 
         return action
     
@@ -145,12 +155,12 @@ class PolicyGradient:
 
                 rwd_iter.append(np.sum(rwds))
 
-                obs = torch.FloatTensor(obs)
-                acts = torch.FloatTensor(np.array(acts))
+                obs = FloatTensor(obs)
+                acts = FloatTensor(np.array(acts))
 
-                disc = torch.FloatTensor(disc)
+                disc = FloatTensor(disc)
 
-                disc_rets = torch.FloatTensor(
+                disc_rets = FloatTensor(
                     [sum(disc_rwds[i:]) for i in range(len(disc_rwds))]
                 )
                 rets = disc_rets / disc
