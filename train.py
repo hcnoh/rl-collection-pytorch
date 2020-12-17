@@ -52,9 +52,10 @@ def main(env_name, model_name, gpu_num):
 
     if torch.cuda.is_available():
         for net in model.get_networks():
-            net = net.cuda()
+            net.to(torch.device("cuda"))
 
         with torch.cuda.device(gpu_num):
+            torch.set_default_tensor_type
             results = model.train(env)
     else:
         results = model.train(env)

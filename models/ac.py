@@ -4,6 +4,11 @@ import torch
 
 from models.pg import PolicyNetwork, ValueNetwork
 
+if torch.cuda.is_available():
+    from torch.cuda import FloatTensor
+else:
+    from torch import FloatTensor
+
 
 class ActorCritic:
     def __init__(
@@ -29,7 +34,7 @@ class ActorCritic:
     def act(self, state):
         self.pi.eval()
 
-        state = torch.FloatTensor(state)
+        state = FloatTensor(state)
 
         if self.discrete:
             probs = self.pi(state)
@@ -102,15 +107,15 @@ class ActorCritic:
 
                 rwd_iter.append(np.sum(rwds))
 
-                obs = torch.FloatTensor(obs)
-                acts = torch.FloatTensor(np.array(acts))
-                rwds = torch.FloatTensor(rwds)
+                obs = FloatTensor(obs)
+                acts = FloatTensor(np.array(acts))
+                rwds = FloatTensor(rwds)
 
-                disc = torch.FloatTensor(disc)
+                disc = FloatTensor(disc)
                 
                 self.v.eval()
                 curr_vals = self.v(obs)
-                next_vals = torch.cat((self.v(obs)[1:], torch.FloatTensor([[0.]])))
+                next_vals = torch.cat((self.v(obs)[1:], FloatTensor([[0.]])))
                 advantage = (rwds + discount * next_vals - curr_vals).detach()
                 if normalize_advantage:
                     advantage = (advantage - advantage.mean()) / advantage.std()
