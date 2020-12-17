@@ -49,6 +49,9 @@ def main(env_name, model_name):
     # action_range = np.maximum(np.abs(action_high), np.abs(action_low))
 
     cuda = torch.cuda.is_available()
+    print(torch.cuda.device)
+    print(torch.cuda.device(0))
+    print(torch.cuda.device(1))
 
     if model_name == "pg":
         model = PolicyGradient(state_dim, action_dim, discrete, **config)
