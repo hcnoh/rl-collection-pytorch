@@ -11,7 +11,7 @@ from models.pg import PolicyGradient
 from models.ac import ActorCritic
 
 
-def main(env_name, model_name):
+def main(env_name, model_name, gpu_num):
     if not os.path.isdir(".ckpts"):
         os.mkdir(".ckpts")
     
@@ -44,21 +44,19 @@ def main(env_name, model_name):
     else:
         discrete = False
         action_dim = env.action_space.shape[0]
-    # action_high = np.max(env.action_space.high)
-    # action_low = np.min(env.action_space.low)
-    # action_range = np.maximum(np.abs(action_high), np.abs(action_low))
+    
+    if model_name == "pg":
+        model = PolicyGradient(state_dim, action_dim, discrete, **config)
+    elif model_name == "ac":
+        model = ActorCritic(state_dim, action_dim, discrete, **config)
 
-    cuda = torch.cuda.is_available()
-    print(torch.cuda.device)
-    print(torch.cuda.device(0))
-    print(torch.cuda.device(1))
+    if torch.cuda.is_available():
+        for net in model.get_networks():
+            net = net.cuda()
 
-    with torch.cuda.device(0):
-        if model_name == "pg":
-            model = PolicyGradient(state_dim, action_dim, discrete, **config)
-        elif model_name == "ac":
-            model = ActorCritic(state_dim, action_dim, discrete, **config)
-
+        with torch.cuda.device(gpu_num):
+            results = model.train(env)
+    else:
         results = model.train(env)
     
     env.close()
@@ -89,6 +87,12 @@ if __name__ == "__main__":
         default="pg",
         help="Type the model name to train. The possible models are [pg, ac]"
     )
+    parser.add_argument(
+        "--gpu_num",
+        type=int,
+        default=0,
+        help="Type the number of the GPU of your GPU mahine you want to use if possible"
+    )
     args = parser.parse_args()
 
-    main(args.env_name, args.model_name)
+    main(**vars(args))
