@@ -22,6 +22,9 @@ class ActorCritic:
 
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         self.v = ValueNetwork(self.state_dim)
+    
+    def get_networks(self):
+        return [self.pi, self.v]
 
     def act(self, state):
         self.pi.eval()

@@ -60,6 +60,12 @@ class PolicyGradient:
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         if self.train_config["use_baseline"]:
             self.v = ValueNetwork(self.state_dim)
+    
+    def get_networks(self):
+        if self.train_config["use_baseline"]:
+            return [self.pi, self.v]
+        else:
+            return [self.pi]
 
     def act(self, state):
         self.pi.eval()

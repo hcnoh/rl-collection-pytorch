@@ -48,10 +48,17 @@ def main(env_name, model_name):
     # action_low = np.min(env.action_space.low)
     # action_range = np.maximum(np.abs(action_high), np.abs(action_low))
 
+    cuda = torch.cuda.is_available()
+
     if model_name == "pg":
         model = PolicyGradient(state_dim, action_dim, discrete, **config)
     elif model_name == "ac":
         model = ActorCritic(state_dim, action_dim, discrete, **config)
+    
+    if cuda:
+        for net in model.get_networks():
+            net = net.cuda()
+
     results = model.train(env)
     
     env.close()
@@ -59,8 +66,12 @@ def main(env_name, model_name):
     with open(ckpt_path + "results.pkl", "wb") as f:
         pickle.dump(results, f)
 
-    torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
-    if config["train_config"]["use_baseline"]:
+    if model_name == "pg":
+        torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
+        if config["train_config"]["use_baseline"]:
+            torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
+    elif model_name == "ac":
+        torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
         torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
 
 

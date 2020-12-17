@@ -36,6 +36,17 @@
                 "normalize_return": true,
                 "use_baseline": true
             }
+        },
+        "ac": {
+            "action_std": 0.1,
+            "train_config": {
+                "lr": 1e-3,
+                "num_iters": 200,
+                "num_eps_per_iter": 50,
+                "horizon": null,
+                "discount": 0.99,
+                "normalize_advantage": true
+            }
         }
     }
 }
