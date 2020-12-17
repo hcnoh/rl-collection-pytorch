@@ -44,21 +44,22 @@ def main(env_name, model_name, num_episodes, render):
         model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
     
     for _ in range(num_episodes):
-        if render:
-            env.render()
-
         ob = env.reset()
         act = model.act(ob)
+        if render:
+            env.render()
         ob, rwd, done, info = env.step(act)
-
-        print(act)
 
         while True:
             act = model.act(ob)
+            if render:
+                env.render()
             ob, rwd, done, info = env.step(act)
 
             if done:
                 break
+    
+    env.close()
 
 
 if __name__ == "__main__":

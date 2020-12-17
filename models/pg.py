@@ -20,15 +20,28 @@ class PolicyNetwork(torch.nn.Module):
             torch.nn.Linear(50, 50),
             torch.nn.Tanh(),
             torch.nn.Linear(50, action_dim),
-            # torch.nn.Tanh()
         )
+
+        self.state_dim = state_dim
+        self.action_dim = action_dim
         self.discrete = discrete
+
+        if not self.discrete:
+            self.log_std = torch.nn.Parameter(torch.zeros(action_dim))
     
     def forward(self, states):
         if self.discrete:
-            return torch.nn.functional.softmax(self.net(states))
+            probs = torch.nn.functional.softmax(self.net(states))
+            distb = torch.distributions.Categorical(probs)
         else:
-            return self.net(states)# * self.action_range
+            mean = self.net(states)
+
+            std = torch.exp(self.log_std)
+            cov_mtx = torch.eye(self.action_dim) * std
+
+            distb = torch.distributions.MultivariateNormal(mean, cov_mtx)
+
+        return distb
 
 
 class ValueNetwork(torch.nn.Module):
@@ -54,13 +67,11 @@ class PolicyGradient:
         state_dim,
         action_dim,
         discrete,
-        action_std=0.1,
         train_config=None
     ):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.discrete = discrete
-        self.action_std = action_std
         self.train_config = train_config
 
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
@@ -81,16 +92,9 @@ class PolicyGradient:
         self.pi.eval()
 
         state = FloatTensor(state)
-
-        if self.discrete:
-            probs = self.pi(state)
-            m = torch.distributions.Categorical(probs)
-        else:
-            mean = self.pi(state)
-            cov_mtx = torch.eye(self.action_dim) * (self.action_std ** 2)
-            m = torch.distributions.MultivariateNormal(mean, cov_mtx)
+        distb = self.pi(state)
         
-        action = m.sample().detach().cpu().numpy()
+        action = distb.sample().detach().cpu().numpy()
 
         return action
     
@@ -117,15 +121,14 @@ class PolicyGradient:
                 disc_rwds = []
                 disc = []
 
-                if render:
-                    env.render()
-
                 ob = env.reset()
                 act = self.act(ob)
 
                 obs.append(ob)
                 acts.append(act)
 
+                if render:
+                    env.render()
                 ob, rwd, done, info = env.step(act)
                 
                 rwds.append(rwd)
@@ -139,6 +142,8 @@ class PolicyGradient:
                     obs.append(ob)
                     acts.append(act)
 
+                    if render:
+                        env.render()
                     ob, rwd, done, info = env.step(act)
 
                     rwds.append(rwd)
@@ -180,20 +185,13 @@ class PolicyGradient:
                     opt_v.step()
 
                 self.pi.train()
-
-                if self.discrete:
-                    probs = self.pi(obs)
-                    m = torch.distributions.Categorical(probs)
-                else:
-                    mean = self.pi(obs)
-                    cov_mtx = torch.eye(self.action_dim) * (self.action_std ** 2)
-                    m = torch.distributions.MultivariateNormal(mean, cov_mtx)
+                distb = self.pi(obs)
                 
                 opt.zero_grad()
                 if use_baseline:
-                    loss = (-1) * disc * delta * m.log_prob(acts)
+                    loss = (-1) * disc * delta * distb.log_prob(acts)
                 else:
-                    loss = (-1) * disc * m.log_prob(acts) * rets
+                    loss = (-1) * disc * distb.log_prob(acts) * rets
                 loss.mean().backward()
                 opt.step()
 

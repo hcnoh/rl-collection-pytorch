@@ -17,13 +17,11 @@ class ActorCritic:
         state_dim,
         action_dim,
         discrete,
-        action_std=0.1,
         train_config=None
     ):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.discrete = discrete
-        self.action_std = action_std
         self.train_config = train_config
 
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
@@ -40,16 +38,9 @@ class ActorCritic:
         self.pi.eval()
 
         state = FloatTensor(state)
-
-        if self.discrete:
-            probs = self.pi(state)
-            m = torch.distributions.Categorical(probs)
-        else:
-            mean = self.pi(state)
-            cov_mtx = torch.eye(self.action_dim) * (self.action_std ** 2)
-            m = torch.distributions.MultivariateNormal(mean, cov_mtx)
+        distb = self.pi(state)
         
-        action = m.sample().detach().cpu().numpy()
+        action = distb.sample().detach().cpu().numpy()
 
         return action
     
@@ -74,15 +65,14 @@ class ActorCritic:
                 disc_rwds = []
                 disc = []
 
-                if render:
-                    env.render()
-
                 ob = env.reset()
                 act = self.act(ob)
 
                 obs.append(ob)
                 acts.append(act)
 
+                if render:
+                    env.render()
                 ob, rwd, done, info = env.step(act)
                 
                 rwds.append(rwd)
@@ -96,6 +86,8 @@ class ActorCritic:
                     obs.append(ob)
                     acts.append(act)
 
+                    if render:
+                        env.render()
                     ob, rwd, done, info = env.step(act)
 
                     rwds.append(rwd)
@@ -133,17 +125,10 @@ class ActorCritic:
                 opt_v.step()
 
                 self.pi.train()
-
-                if self.discrete:
-                    probs = self.pi(obs)
-                    m = torch.distributions.Categorical(probs)
-                else:
-                    mean = self.pi(obs)
-                    cov_mtx = torch.eye(self.action_dim) * (self.action_std ** 2)
-                    m = torch.distributions.MultivariateNormal(mean, cov_mtx)
+                distb = self.pi(obs)
                 
                 opt_pi.zero_grad()
-                loss = (-1) * disc * advantage * m.log_prob(acts)
+                loss = (-1) * disc * advantage * distb.log_prob(acts)
                 loss.mean().backward()
                 opt_pi.step()
 

@@ -1,7 +1,6 @@
 {
     "CartPole-v1": {
         "pg": {
-            "action_std": 0.1,
             "train_config": {
                 "lr": 1e-3,
                 "num_iters": 50,
@@ -13,7 +12,6 @@
             }
         },
         "ac": {
-            "action_std": 0.1,
             "train_config": {
                 "lr": 1e-3,
                 "num_iters": 50,
@@ -26,7 +24,6 @@
     },
     "BipedalWalker-v3": {
         "pg": {
-            "action_std": 0.1,
             "train_config": {
                 "lr": 1e-3,
                 "num_iters": 1000,
@@ -38,7 +35,6 @@
             }
         },
         "ac": {
-            "action_std": 0.1,
             "train_config": {
                 "lr": 1e-3,
                 "num_iters": 200,
