@@ -6,6 +6,7 @@ from models.pg import PolicyNetwork, ValueNetwork
 
 if torch.cuda.is_available():
     from torch.cuda import FloatTensor
+    torch.set_default_tensor_type(torch.cuda.FloatTensor)
 else:
     from torch import FloatTensor
 
@@ -27,6 +28,9 @@ class ActorCritic:
 
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         self.v = ValueNetwork(self.state_dim)
+        if torch.cuda.is_available():
+            self.pi.to(torch.device("cuda"))
+            self.v.to(torch.device("cuda"))
     
     def get_networks(self):
         return [self.pi, self.v]
