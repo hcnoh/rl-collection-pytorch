@@ -59,7 +59,7 @@ def main(env_name, model_name):
         for net in model.get_networks():
             net = net.cuda()
 
-    results = model.train(env)
+    results = model.train(env, cuda=cuda)
     
     env.close()
 
