@@ -53,16 +53,13 @@ def main(env_name, model_name):
     print(torch.cuda.device(0))
     print(torch.cuda.device(1))
 
-    if model_name == "pg":
-        model = PolicyGradient(state_dim, action_dim, discrete, **config)
-    elif model_name == "ac":
-        model = ActorCritic(state_dim, action_dim, discrete, **config)
-    
-    if cuda:
-        for net in model.get_networks():
-            net = net.cuda()
+    with torch.cuda.device(0):
+        if model_name == "pg":
+            model = PolicyGradient(state_dim, action_dim, discrete, **config)
+        elif model_name == "ac":
+            model = ActorCritic(state_dim, action_dim, discrete, **config)
 
-    results = model.train(env, cuda=cuda)
+        results = model.train(env)
     
     env.close()
 

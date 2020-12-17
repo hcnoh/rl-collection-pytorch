@@ -26,12 +26,10 @@ class ActorCritic:
     def get_networks(self):
         return [self.pi, self.v]
 
-    def act(self, state, cuda=False):
+    def act(self, state):
         self.pi.eval()
 
         state = torch.FloatTensor(state)
-        if cuda:
-            state = state.cuda()
 
         if self.discrete:
             probs = self.pi(state)
@@ -45,7 +43,7 @@ class ActorCritic:
 
         return action
     
-    def train(self, env, render=False, cuda=False):
+    def train(self, env, render=False):
         lr = self.train_config["lr"]
         num_iters = self.train_config["num_iters"]
         num_eps_per_iter = self.train_config["num_eps_per_iter"]
@@ -70,7 +68,7 @@ class ActorCritic:
                     env.render()
 
                 ob = env.reset()
-                act = self.act(ob, cuda=cuda)
+                act = self.act(ob)
 
                 obs.append(ob)
                 acts.append(act)
@@ -83,7 +81,7 @@ class ActorCritic:
 
                 t = 1
                 while True:
-                    act = self.act(ob, cuda=cuda)
+                    act = self.act(ob)
 
                     obs.append(ob)
                     acts.append(act)
@@ -109,9 +107,6 @@ class ActorCritic:
                 rwds = torch.FloatTensor(rwds)
 
                 disc = torch.FloatTensor(disc)
-
-                if cuda:
-                    obs, acts, rwds, disc = obs.cuda(), acts.cuda(), rwds.cuda(), disc.cuda()
                 
                 self.v.eval()
                 curr_vals = self.v(obs)
