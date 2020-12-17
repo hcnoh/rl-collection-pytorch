@@ -70,7 +70,7 @@ class ActorCritic:
                     env.render()
 
                 ob = env.reset()
-                act = self.act(ob)
+                act = self.act(ob, cuda=cuda)
 
                 obs.append(ob)
                 acts.append(act)
@@ -83,7 +83,7 @@ class ActorCritic:
 
                 t = 1
                 while True:
-                    act = self.act(ob)
+                    act = self.act(ob, cuda=cuda)
 
                     obs.append(ob)
                     acts.append(act)
