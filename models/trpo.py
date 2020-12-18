@@ -161,7 +161,7 @@ class TRPO:
                         fims.append(torch.matmul(grad_lp, grad_lp.T))
                     H = (disc.unsqueeze(-1).unsqueeze(-1) * torch.stack(fims)).mean(0)
 
-                    s, _ = cg(H.numpy(), g.numpy(), tol=1e-10, maxiter=10)
+                    s, _ = cg(H.cpu().numpy(), g.cpu().numpy(), tol=1e-10, maxiter=10)
                     s = FloatTensor(s).unsqueeze(-1)
                     beta = torch.sqrt((2 * kl_stepsize) / (torch.matmul(s.T, torch.matmul(H, s)) + 1e-10))
 
