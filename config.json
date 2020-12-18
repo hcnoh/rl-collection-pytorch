@@ -20,6 +20,18 @@
                 "discount": 0.99,
                 "normalize_advantage": false
             }
+        },
+        "trpo": {
+            "train_config": {
+                "lr": 1e-3,
+                "num_iters": 50,
+                "num_eps_per_iter": 50,
+                "horizon": null,
+                "discount": 0.99,
+                "kl_stepsize": 0.01,
+                "normalize_return": false,
+                "use_baseline": false
+            }
         }
     },
     "BipedalWalker-v3": {
@@ -42,6 +54,18 @@
                 "horizon": null,
                 "discount": 0.99,
                 "normalize_advantage": true
+            }
+        },
+        "trpo": {
+            "train_config": {
+                "lr": 1e-3,
+                "num_iters": 50,
+                "num_eps_per_iter": 50,
+                "horizon": null,
+                "discount": 0.99,
+                "kl_stepsize": 0.01,
+                "normalize_return": false,
+                "use_baseline": false
             }
         }
     }

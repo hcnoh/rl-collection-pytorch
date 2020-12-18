@@ -107,7 +107,7 @@ class PolicyGradient:
         normalize_return = self.train_config["normalize_return"]
         use_baseline = self.train_config["use_baseline"]
 
-        opt = torch.optim.Adam(self.pi.parameters(), lr)
+        opt_pi = torch.optim.Adam(self.pi.parameters(), lr)
         if use_baseline:
             opt_v = torch.optim.Adam(self.v.parameters(), lr)
 
@@ -187,13 +187,13 @@ class PolicyGradient:
                 self.pi.train()
                 distb = self.pi(obs)
                 
-                opt.zero_grad()
+                opt_pi.zero_grad()
                 if use_baseline:
                     loss = (-1) * disc * delta * distb.log_prob(acts)
                 else:
                     loss = (-1) * disc * distb.log_prob(acts) * rets
                 loss.mean().backward()
-                opt.step()
+                opt_pi.step()
 
             rwd_iter_means.append(np.mean(rwd_iter))
             print("Iterations: %i,   Reward Mean: %f" % (i + 1, np.mean(rwd_iter)))
