@@ -154,12 +154,16 @@ class TRPO:
                 log_pi = distb.log_prob(acts)
                 for param, g in zip(self.pi.parameters(), grads):
                     g = g.flatten().detach()
-                    fims = []
-                    for lp in log_pi:
+
+                    lp, d = log_pi[0], disc[0]
+                    grad_lp = torch.autograd.grad(lp, param, retain_graph=True)[0].flatten().detach()
+                    grad_lp = grad_lp.unsqueeze(-1)
+                    H = d * torch.matmul(grad_lp, grad_lp.T)
+                    for lp, d in zip(log_pi[1:], disc[1:]):
                         grad_lp = torch.autograd.grad(lp, param, retain_graph=True)[0].flatten().detach()
                         grad_lp = grad_lp.unsqueeze(-1)
-                        fims.append(torch.matmul(grad_lp, grad_lp.T))
-                    H = (disc.unsqueeze(-1).unsqueeze(-1) * torch.stack(fims)).mean(0)
+                        H += d * torch.matmul(grad_lp, grad_lp.T)
+                    H /= len(disc)
 
                     s, _ = cg(H.cpu().numpy(), g.cpu().numpy(), tol=1e-10, maxiter=10)
                     s = FloatTensor(s).unsqueeze(-1)
