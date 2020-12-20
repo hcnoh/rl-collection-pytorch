@@ -47,7 +47,7 @@ class ActorCritic:
     def train(self, env, render=False):
         lr = self.train_config["lr"]
         num_iters = self.train_config["num_iters"]
-        num_eps_per_iter = self.train_config["num_eps_per_iter"]
+        num_steps_per_iter = self.train_config["num_steps_per_iter"]
         horizon = self.train_config["horizon"]
         discount = self.train_config["discount"]
         normalize_advantage = self.train_config["normalize_advantage"]
@@ -56,16 +56,23 @@ class ActorCritic:
         opt_v = torch.optim.Adam(self.v.parameters(), lr)
 
         rwd_iter_means = []
-        for i in range(num_iters):
-            rwd_iter = []
-            for _ in range(num_eps_per_iter):
-                obs = []
-                acts = []
-                rwds = []
-                disc_rwds = []
-                disc = []
+        rwd_iter = []
 
-                ob = env.reset()
+        i = 0
+        steps = 0
+        while i < num_iters:
+            obs = []
+            acts = []
+            rwds = []
+            disc_rwds = []
+            disc = []
+
+            t = 0
+            done = False
+
+            ob = env.reset()
+            
+            while not done:
                 act = self.act(ob)
 
                 obs.append(ob)
@@ -74,65 +81,53 @@ class ActorCritic:
                 if render:
                     env.render()
                 ob, rwd, done, info = env.step(act)
-                
+
                 rwds.append(rwd)
-                disc_rwds.append(rwd)
-                disc.append(discount ** 0)
+                disc_rwds.append(rwd * (discount ** t))
+                disc.append(discount ** t)
+                    
+                t += 1
+                steps += 1
+                if steps == num_steps_per_iter:
+                    rwd_iter_means.append(np.mean(rwd_iter))
+                    print("Iterations: %i,   Reward Mean: %f" % (i + 1, np.mean(rwd_iter)))
 
-                t = 1
-                while True:
-                    act = self.act(ob)
+                    i += 1
+                    steps = 0
+                    rwd_iter = []
 
-                    obs.append(ob)
-                    acts.append(act)
-
-                    if render:
-                        env.render()
-                    ob, rwd, done, info = env.step(act)
-
-                    rwds.append(rwd)
-                    disc_rwds.append(rwd * (discount ** t))
-                    disc.append(discount ** t)
-                        
-                    t += 1
-
-                    if done:
+                if horizon is not None:
+                    if t >= horizon:
                         break
-                    if horizon is not None:
-                        if t >= horizon:
-                            break
 
-                rwd_iter.append(np.sum(rwds))
+            rwd_iter.append(np.sum(rwds))
 
-                obs = FloatTensor(obs)
-                acts = FloatTensor(np.array(acts))
-                rwds = FloatTensor(rwds)
+            obs = FloatTensor(obs)
+            acts = FloatTensor(np.array(acts))
+            rwds = FloatTensor(rwds)
 
-                disc = FloatTensor(disc)
-                
-                self.v.eval()
-                curr_vals = self.v(obs)
-                next_vals = torch.cat((self.v(obs)[1:], FloatTensor([[0.]])))
-                advantage = (rwds + discount * next_vals - curr_vals).detach()
-                if normalize_advantage:
-                    advantage = (advantage - advantage.mean()) / advantage.std()
+            disc = FloatTensor(disc)
+            
+            self.v.eval()
+            curr_vals = self.v(obs)
+            next_vals = torch.cat((self.v(obs)[1:], FloatTensor([[0.]])))
+            advantage = (rwds + discount * next_vals - curr_vals).detach()
+            if normalize_advantage:
+                advantage = (advantage - advantage.mean()) / advantage.std()
 
-                self.v.train()
+            self.v.train()
 
-                opt_v.zero_grad()
-                loss = (-1) * disc * advantage * self.v(obs)
-                loss.mean().backward()
-                opt_v.step()
+            opt_v.zero_grad()
+            loss = (-1) * disc * advantage * self.v(obs)
+            loss.mean().backward()
+            opt_v.step()
 
-                self.pi.train()
-                distb = self.pi(obs)
-                
-                opt_pi.zero_grad()
-                loss = (-1) * disc * advantage * distb.log_prob(acts)
-                loss.mean().backward()
-                opt_pi.step()
-
-            rwd_iter_means.append(np.mean(rwd_iter))
-            print("Iterations: %i,   Reward Mean: %f" % (i + 1, np.mean(rwd_iter)))
+            self.pi.train()
+            distb = self.pi(obs)
+            
+            opt_pi.zero_grad()
+            loss = (-1) * disc * advantage * distb.log_prob(acts)
+            loss.mean().backward()
+            opt_pi.step()
         
         return rwd_iter_means

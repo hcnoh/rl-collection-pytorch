@@ -44,20 +44,19 @@ def main(env_name, model_name, num_episodes, render):
         model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
     
     for _ in range(num_episodes):
-        ob = env.reset()
-        act = model.act(ob)
-        if render:
-            env.render()
-        ob, rwd, done, info = env.step(act)
+        rwds = []
 
-        while True:
+        done = False
+        ob = env.reset()
+
+        while not done:
             act = model.act(ob)
             if render:
                 env.render()
             ob, rwd, done, info = env.step(act)
-
-            if done:
-                break
+            rwds.append(rwd)
+        
+        print("The total reward of the episode is %f!" % sum(rwds))
     
     env.close()
 

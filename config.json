@@ -3,19 +3,19 @@
         "pg": {
             "train_config": {
                 "lr": 1e-3,
-                "num_iters": 50,
-                "num_eps_per_iter": 50,
+                "num_iters": 200,
+                "num_steps_per_iter": 2000,
                 "horizon": null,
                 "discount": 0.99,
-                "normalize_return": true,
-                "use_baseline": true
+                "normalize_return": false,
+                "use_baseline": false
             }
         },
         "ac": {
             "train_config": {
                 "lr": 1e-3,
-                "num_iters": 50,
-                "num_eps_per_iter": 50,
+                "num_iters": 200,
+                "num_steps_per_iter": 2000,
                 "horizon": null,
                 "discount": 0.99,
                 "normalize_advantage": false
@@ -24,11 +24,12 @@
         "trpo": {
             "train_config": {
                 "lr": 1e-3,
-                "num_iters": 50,
-                "num_eps_per_iter": 50,
+                "num_iters": 200,
+                "num_steps_per_iter": 2000,
                 "horizon": null,
                 "discount": 0.99,
                 "kl_stepsize": 0.01,
+                "cg_damping": 1e-1,
                 "normalize_return": false,
                 "use_baseline": false
             }
@@ -59,7 +60,7 @@
         "trpo": {
             "train_config": {
                 "lr": 1e-3,
-                "num_iters": 50,
+                "num_iters": 200,
                 "num_eps_per_iter": 50,
                 "horizon": null,
                 "discount": 0.99,
