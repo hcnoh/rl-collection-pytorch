@@ -58,6 +58,7 @@ def rescale_and_linesearch(g, s, Hs, kl_stepsize, L, kld, old_params, max_iter=1
     if torch.isnan(beta).detach().cpu().numpy():
         print("WTF 1", torch.dot(s, Hs), s, Hs)
         return old_params
+    
     for _ in range(max_iter):
         new_params = old_params + beta * s
         X = 0 if kld(new_params) <= kl_stepsize else 1e+10
@@ -213,19 +214,22 @@ class TRPO:
                 
             g = get_flat_grads(L(old_params), self.pi)
 
+            set_params(self.pi, old_params)
+            old_distb = self.pi(obs)
+
+            old_log_pi = old_distb.log_prob(acts).detach()
+
             def kld(flat_params):
                 set_params(self.pi, flat_params)
                 distb = self.pi(obs)
 
-                old_log_pi = distb.log_prob(acts).detach()
-
                 # return (disc * (old_log_pi - distb.log_prob(acts))).mean()
                 return (old_log_pi - distb.log_prob(acts)).mean()
 
-            def Hv(v):
-                grad_kld = get_flat_grads(kld(old_params), self.pi)
+            grad_kld_old_param = get_flat_grads(kld(old_params), self.pi)
 
-                return get_flat_grads(torch.dot(grad_kld, v), self.pi) + cg_damping * v
+            def Hv(v):
+                return get_flat_grads(torch.dot(grad_kld_old_param, v), self.pi) + cg_damping * v
             
             s = conjugate_gradient(Hv, g)
             Hs = Hv(s)
