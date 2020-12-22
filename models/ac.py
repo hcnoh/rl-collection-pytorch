@@ -1,5 +1,4 @@
 import numpy as np
-import scipy
 import torch
 
 from models.pg import PolicyNetwork, ValueNetwork
@@ -26,11 +25,11 @@ class ActorCritic:
 
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         self.v = ValueNetwork(self.state_dim)
-        
+
         if torch.cuda.is_available():
             for net in self.get_networks():
                 net.to(torch.device("cuda"))
-    
+
     def get_networks(self):
         return [self.pi, self.v]
 
@@ -39,11 +38,11 @@ class ActorCritic:
 
         state = FloatTensor(state)
         distb = self.pi(state)
-        
+
         action = distb.sample().detach().cpu().numpy()
 
         return action
-    
+
     def train(self, env, render=False):
         lr = self.train_config["lr"]
         num_iters = self.train_config["num_iters"]
@@ -71,7 +70,7 @@ class ActorCritic:
             done = False
 
             ob = env.reset()
-            
+
             while not done:
                 act = self.act(ob)
 
@@ -85,12 +84,15 @@ class ActorCritic:
                 rwds.append(rwd)
                 disc_rwds.append(rwd * (discount ** t))
                 disc.append(discount ** t)
-                    
+
                 t += 1
                 steps += 1
                 if steps == num_steps_per_iter:
                     rwd_iter_means.append(np.mean(rwd_iter))
-                    print("Iterations: %i,   Reward Mean: %f" % (i + 1, np.mean(rwd_iter)))
+                    print(
+                        "Iterations: %i,   Reward Mean: %f"
+                        % (i + 1, np.mean(rwd_iter))
+                    )
 
                     i += 1
                     steps = 0
@@ -107,7 +109,7 @@ class ActorCritic:
             rwds = FloatTensor(rwds)
 
             disc = FloatTensor(disc)
-            
+
             self.v.eval()
             curr_vals = self.v(obs)
             next_vals = torch.cat((self.v(obs)[1:], FloatTensor([[0.]])))
@@ -124,10 +126,10 @@ class ActorCritic:
 
             self.pi.train()
             distb = self.pi(obs)
-            
+
             opt_pi.zero_grad()
             loss = (-1) * disc * advantage * distb.log_prob(acts)
             loss.mean().backward()
             opt_pi.step()
-        
+
         return rwd_iter_means

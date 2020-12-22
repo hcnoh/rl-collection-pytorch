@@ -1,5 +1,4 @@
 import numpy as np
-import scipy
 import torch
 
 if torch.cuda.is_available():
@@ -19,7 +18,7 @@ class PolicyNetwork(torch.nn.Module):
             torch.nn.Tanh(),
             torch.nn.Linear(50, 50),
             torch.nn.Tanh(),
-            torch.nn.Linear(50, action_dim),#, bias=False),
+            torch.nn.Linear(50, action_dim),  # , bias=False),
         )
 
         self.state_dim = state_dim
@@ -28,7 +27,7 @@ class PolicyNetwork(torch.nn.Module):
 
         if not self.discrete:
             self.log_std = torch.nn.Parameter(torch.zeros(action_dim))
-    
+
     def forward(self, states):
         if self.discrete:
             probs = torch.nn.functional.softmax(self.net(states))
@@ -37,7 +36,7 @@ class PolicyNetwork(torch.nn.Module):
             mean = self.net(states)
 
             std = torch.exp(self.log_std)
-            cov_mtx = torch.eye(self.action_dim) * std
+            cov_mtx = torch.eye(self.action_dim) * (std ** 2)
 
             distb = torch.distributions.MultivariateNormal(mean, cov_mtx)
 
@@ -56,7 +55,7 @@ class ValueNetwork(torch.nn.Module):
             torch.nn.Tanh(),
             torch.nn.Linear(50, 1),
         )
-        
+
     def forward(self, states):
         return self.net(states)
 
@@ -77,11 +76,11 @@ class PolicyGradient:
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         if self.train_config["use_baseline"]:
             self.v = ValueNetwork(self.state_dim)
-        
+
         if torch.cuda.is_available():
             for net in self.get_networks():
                 net.to(torch.device("cuda"))
-    
+
     def get_networks(self):
         if self.train_config["use_baseline"]:
             return [self.pi, self.v]
@@ -93,11 +92,11 @@ class PolicyGradient:
 
         state = FloatTensor(state)
         distb = self.pi(state)
-        
+
         action = distb.sample().detach().cpu().numpy()
 
         return action
-    
+
     def train(self, env, render=False):
         lr = self.train_config["lr"]
         num_iters = self.train_config["num_iters"]
@@ -141,12 +140,15 @@ class PolicyGradient:
                 rwds.append(rwd)
                 disc_rwds.append(rwd * (discount ** t))
                 disc.append(discount ** t)
-                    
+
                 t += 1
                 steps += 1
                 if steps == num_steps_per_iter:
                     rwd_iter_means.append(np.mean(rwd_iter))
-                    print("Iterations: %i,   Reward Mean: %f" % (i + 1, np.mean(rwd_iter)))
+                    print(
+                        "Iterations: %i,   Reward Mean: %f"
+                        % (i + 1, np.mean(rwd_iter))
+                    )
 
                     i += 1
                     steps = 0
@@ -167,10 +169,10 @@ class PolicyGradient:
                 [sum(disc_rwds[i:]) for i in range(len(disc_rwds))]
             )
             rets = disc_rets / disc
-            
+
             if normalize_return:
                 rets = (rets - rets.mean()) / rets.std()
-            
+
             if use_baseline:
                 self.v.eval()
                 delta = (rets - self.v(obs)).detach()
@@ -184,7 +186,7 @@ class PolicyGradient:
 
             self.pi.train()
             distb = self.pi(obs)
-            
+
             opt_pi.zero_grad()
             if use_baseline:
                 loss = (-1) * disc * delta * distb.log_prob(acts)
@@ -192,5 +194,5 @@ class PolicyGradient:
                 loss = (-1) * disc * distb.log_prob(acts) * rets
             loss.mean().backward()
             opt_pi.step()
-        
+
         return rwd_iter_means

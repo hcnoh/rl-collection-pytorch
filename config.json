@@ -18,7 +18,7 @@
                 "num_steps_per_iter": 2000,
                 "horizon": null,
                 "discount": 0.99,
-                "normalize_advantage": false
+                "normalize_advantage": true
             }
         },
         "trpo": {
@@ -29,7 +29,7 @@
                 "horizon": null,
                 "discount": 0.99,
                 "kl_stepsize": 0.01,
-                "cg_damping": 1e-1,
+                "cg_damping": 0.1,
                 "normalize_return": false,
                 "use_baseline": false
             }
