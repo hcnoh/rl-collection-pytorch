@@ -6,17 +6,21 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ### The results of CartPole environment
 
-![](/assets/img/README/README_2020-12-21-11-16-20.png)
+![](/assets/img/README/README_2020-12-22-22-30-19.png)
 
-![](/assets/img/README/README_2020-12-21-11-39-05.png)
+![](/assets/img/README/README_2020-12-22-22-30-25.png)
 
-![](/assets/img/README/README_2020-12-21-12-02-17.png)
+![](/assets/img/README/README_2020-12-22-22-30-31.png)
 
-![](/assets/img/README/README_2020-12-21-12-02-30.png)
+![](/assets/img/README/README_2020-12-22-22-30-38.png)
 
-![](/assets/img/README/README_2020-12-22-16-01-25.png)
+![](/assets/img/README/README_2020-12-22-22-30-49.png)
 
-![](/assets/img/README/README_2020-12-22-16-01-46.png)
+![](/assets/img/README/README_2020-12-22-22-30-58.png)
+
+### The results of BipedalWalker environment
+
+![](/assets/img/README/README_2020-12-22-22-31-24.png)
 
 ### Future Works
 - Implement PPO
