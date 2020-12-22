@@ -27,10 +27,9 @@ def set_params(net, new_flat_params):
     start_idx = 0
     for param in net.parameters():
         end_idx = start_idx + np.prod(list(param.shape))
-        param.data = \
-            new_flat_params[start_idx:end_idx]\
-            .unflatten(0, param.shape)\
-            .squeeze()
+        param.data = torch.reshape(
+            new_flat_params[start_idx:end_idx], param.shape
+        )
 
         start_idx = end_idx
 

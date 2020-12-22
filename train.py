@@ -19,6 +19,10 @@ def main(env_name, model_name, gpu_num):
         print("The model name is wrong!")
         return
 
+    if env_name not in ["CartPole-v1", "Pendulum-v0", "BipedalWalker-v3"]:
+        print("The environment name is wrong!")
+        return
+
     ckpt_path = ".ckpts/%s/" % model_name
     if not os.path.isdir(ckpt_path):
         os.mkdir(ckpt_path)

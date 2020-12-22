@@ -2,7 +2,7 @@
 
 This repository is a collection of reinforcement learning algorithms: Policy-Gradient, Actor-Critic, Trust Region Policy Optimization. (More algorithms will be added soon...)
 
-In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `CartPole-v0`, `BipedalWalker-v3` are used. You need to install them before running this repository.
+In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `CartPole-v0`, `Pendulum-v0`, and `BipedalWalker-v3` are used. You need to install them before running this repository.
 
 ### The results of CartPole environment
 
@@ -17,6 +17,10 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 ![](/assets/img/README/README_2020-12-22-22-30-49.png)
 
 ![](/assets/img/README/README_2020-12-22-22-30-58.png)
+
+### The results of Pendulum environment
+
+![](/assets/img/README/README_2020-12-23-08-34-49.png)
 
 ### The results of BipedalWalker environment
 
