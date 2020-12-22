@@ -56,22 +56,34 @@ def conjugate_gradient(Av_func, b, max_iter=10, residual_tol=1e-10):
 
 
 def rescale_and_linesearch(
-    g, s, Hs, kl_stepsize, L, kld, old_params, max_iter=10
+    g, s, Hs, kl_stepsize, L, kld, old_params, pi, max_iter=10,
+    success_ratio=0.1
 ):
-    L_old = L(old_params).detach()
+    set_params(pi, old_params)
+    L_old = L().detach()
+
     beta = torch.sqrt((2 * kl_stepsize) / torch.dot(s, Hs))
 
     for _ in range(max_iter):
         new_params = old_params + beta * s
-        X = 0 if kld(new_params).detach() <= kl_stepsize else 1e+10
-        L_new = L(new_params).detach() - X
-        print(L_new, L_old, kld(new_params).detach(), kld(old_params).detach())
-        if L_new > L_old:
-            print("The best situation!")
+
+        set_params(pi, new_params)
+        kld_new = kld().detach()
+
+        L_new = L().detach()
+
+        actual_improv = L_new - L_old
+        approx_improv = torch.dot(g, beta * s)
+        ratio = actual_improv / approx_improv
+
+        if ratio > success_ratio \
+            and actual_improv > 0 \
+                and kld_new < kl_stepsize:
             return new_params
+
         beta *= 0.5
 
-    print("WTF 2")
+    print("The line search was failed!")
     return old_params
 
 
@@ -146,7 +158,7 @@ class TRPO:
 
                 ob = env.reset()
 
-                while not done or steps < num_steps_per_iter:
+                while not done and steps < num_steps_per_iter:
                     act = self.act(ob)
 
                     obs.append(ob)
@@ -206,31 +218,32 @@ class TRPO:
                 opt_v.step()
 
             self.pi.train()
-            old_params = get_flat_params(self.pi)
+            old_params = get_flat_params(self.pi).detach()
             old_distb = self.pi(obs)
 
-            def L(flat_params):
-                set_params(self.pi, flat_params)
+            def L():
                 distb = self.pi(obs)
 
                 if use_baseline:
-                    return (disc * delta * distb.log_prob(acts)).mean()
+                    return (disc * delta * torch.exp(
+                        distb.log_prob(acts)
+                        - old_distb.log_prob(acts).detach()))\
+                        .mean()
                 else:
-                    return (disc * distb.log_prob(acts) * rets).mean()
-                    # return (distb.log_prob(acts) * rets).mean()
+                    return (disc * rets * torch.exp(
+                        distb.log_prob(acts)
+                        - old_distb.log_prob(acts).detach()))\
+                        .mean()
 
-            g = get_flat_grads(L(old_params), self.pi)
-
-            def kld(flat_params):
-                set_params(self.pi, flat_params)
+            def kld():
                 distb = self.pi(obs)
 
                 if self.discrete:
                     old_p = old_distb.probs.detach()
                     p = distb.probs
 
-                    return \
-                        (old_p * (torch.log(old_p) - torch.log(p))).sum(-1)\
+                    return (old_p * (torch.log(old_p) - torch.log(p)))\
+                        .sum(-1)\
                         .mean()
                     # return \
                     #     (disc *
@@ -244,8 +257,7 @@ class TRPO:
                     mean = distb.mean
                     cov = distb.covariance_matrix.sum(-1)
 
-                    return (0.5) * \
-                        (
+                    return (0.5) * (
                             (old_cov / cov).sum(-1)
                             + (((old_mean - mean) ** 2) / cov).sum(-1)
                             - self.action_dim
@@ -253,15 +265,9 @@ class TRPO:
                             - torch.log(old_cov).sum(-1)
                         ).mean()
 
-                # return (disc * (old_log_pi - distb.log_prob(acts))).mean()
-                # return (old_log_pi - distb.log_prob(acts)).mean()
-
-            set_params(self.pi, old_params)
-            grad_kld_old_param = get_flat_grads(kld(old_params), self.pi)
+            grad_kld_old_param = get_flat_grads(kld(), self.pi)
 
             def Hv(v):
-                set_params(self.pi, old_params)
-
                 hessian = get_flat_grads(
                     torch.dot(grad_kld_old_param, v),
                     self.pi
@@ -269,16 +275,15 @@ class TRPO:
 
                 return hessian + cg_damping * v
 
-            s = conjugate_gradient(Hv, g)
-            Hs = Hv(s)
+            g = get_flat_grads(L(), self.pi).detach()
 
-            print((torch.abs(Hs - g)).mean() / torch.abs(s).mean())
+            s = conjugate_gradient(Hv, g).detach()
+            Hs = Hv(s).detach()
 
             new_params = rescale_and_linesearch(
-                g, s, Hs, kl_stepsize, L, kld, old_params
+                g, s, Hs, kl_stepsize, L, kld, old_params, self.pi
             )
 
             set_params(self.pi, new_params)
-            # set_params(self.pi, old_params + 1e-4 * g) # for test
 
         return rwd_iter_means

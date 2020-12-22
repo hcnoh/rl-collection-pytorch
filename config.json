@@ -30,7 +30,7 @@
                 "discount": 0.99,
                 "kl_stepsize": 0.01,
                 "cg_damping": 0.1,
-                "normalize_return": false,
+                "normalize_return": true,
                 "use_baseline": false
             }
         }

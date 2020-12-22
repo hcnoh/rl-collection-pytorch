@@ -70,6 +70,10 @@ def main(env_name, model_name, gpu_num):
     elif model_name == "ac":
         torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
         torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
+    elif model_name == "trpo":
+        torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
+        if config["train_config"]["use_baseline"]:
+            torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
 
 
 if __name__ == "__main__":

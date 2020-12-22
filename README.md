@@ -14,6 +14,14 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ![](/assets/img/README/README_2020-12-21-12-02-30.png)
 
+![](/assets/img/README/README_2020-12-22-16-01-25.png)
+
+![](/assets/img/README/README_2020-12-22-16-01-46.png)
+
 ### Future Works
 - Implement PPO
 - Search other environments to running the algorithms
+
+
+### References
+- An explaination of TRPO line search: [link](https://jonathan-hui.medium.com/rl-trust-region-policy-optimization-trpo-part-2-f51e3b2e373a)

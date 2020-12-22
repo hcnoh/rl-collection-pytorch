@@ -1,9 +1,6 @@
-import os
 import json
-import pickle
 import argparse
 
-import numpy as np
 import torch
 import gym
 
@@ -17,7 +14,7 @@ def main(env_name, model_name, num_episodes, render):
     print(ckpt_path)
     with open(ckpt_path + "model_config.json") as f:
         config = json.load(f)
-    
+
     env = gym.make(env_name)
     env.reset()
 
@@ -30,7 +27,7 @@ def main(env_name, model_name, num_episodes, render):
     else:
         discrete = False
         action_dim = env.action_space.shape[0]
-    
+
     if model_name == "pg":
         model = PolicyGradient(state_dim, action_dim, discrete, **config)
 
@@ -42,7 +39,13 @@ def main(env_name, model_name, num_episodes, render):
 
         model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
         model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
-    
+    elif model_name == "trpo":
+        model = PolicyGradient(state_dim, action_dim, discrete, **config)
+
+        model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
+        if config["train_config"]["use_baseline"]:
+            model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
+
     for _ in range(num_episodes):
         rwds = []
 
@@ -55,9 +58,9 @@ def main(env_name, model_name, num_episodes, render):
                 env.render()
             ob, rwd, done, info = env.step(act)
             rwds.append(rwd)
-        
+
         print("The total reward of the episode is %f!" % sum(rwds))
-    
+
     env.close()
 
 
@@ -67,7 +70,9 @@ if __name__ == "__main__":
         "--env_name",
         type=str,
         default="CartPole-v1",
-        help="Type the environment name to run. The possible environments are [CartPole-v1, Pendulum-v0, BipedalWalker-v3]"
+        help="Type the environment name to run. \
+            The possible environments are \
+                [CartPole-v1, Pendulum-v0, BipedalWalker-v3]"
     )
     parser.add_argument(
         "--model_name",
