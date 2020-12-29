@@ -113,14 +113,25 @@ class ActorCritic:
             self.v.eval()
             curr_vals = self.v(obs)
             next_vals = torch.cat((self.v(obs)[1:], FloatTensor([[0.]])))
-            advantage = (rwds + discount * next_vals - curr_vals).detach()
+            advantage = (
+                rwds.unsqueeze(-1)
+                + discount * next_vals
+                - curr_vals
+            ).detach()
             if normalize_advantage:
                 advantage = (advantage - advantage.mean()) / advantage.std()
+            # print(advantage.shape, obs.shape, disc.shape)
 
             self.v.train()
 
             opt_v.zero_grad()
-            loss = (-1) * disc * advantage * self.v(obs)
+            loss = (0.5) * (
+                rwds.unsqueeze(-1)
+                + discount * next_vals.detach()
+                - self.v(obs)
+            ) ** 2
+            # loss = (-1) * disc.unsqueeze(-1) * advantage * self.v(obs)
+            # print(loss.shape)
             loss.mean().backward()
             opt_v.step()
 
@@ -128,7 +139,7 @@ class ActorCritic:
             distb = self.pi(obs)
 
             opt_pi.zero_grad()
-            loss = (-1) * disc * advantage * distb.log_prob(acts)
+            loss = (-1) * disc.unsqueeze(-1) * advantage * distb.log_prob(acts)
             loss.mean().backward()
             opt_pi.step()
 
