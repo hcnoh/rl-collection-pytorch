@@ -2,6 +2,8 @@ import numpy as np
 import torch
 
 from models.pg import PolicyNetwork, ValueNetwork
+from models.trpo import get_flat_grads, get_flat_params, set_params, \
+    conjugate_gradient, rescale_and_linesearch
 
 if torch.cuda.is_available():
     from torch.cuda import FloatTensor
@@ -10,83 +12,7 @@ else:
     from torch import FloatTensor
 
 
-def get_flat_grads(f, net):
-    flat_grads = torch.cat([
-        grad.view(-1)
-        for grad in torch.autograd.grad(f, net.parameters(), create_graph=True)
-    ])
-
-    return flat_grads
-
-
-def get_flat_params(net):
-    return torch.cat([param.view(-1) for param in net.parameters()])
-
-
-def set_params(net, new_flat_params):
-    start_idx = 0
-    for param in net.parameters():
-        end_idx = start_idx + np.prod(list(param.shape))
-        param.data = torch.reshape(
-            new_flat_params[start_idx:end_idx], param.shape
-        )
-
-        start_idx = end_idx
-
-
-def conjugate_gradient(Av_func, b, max_iter=10, residual_tol=1e-10):
-    x = torch.zeros_like(b)
-    r = b - Av_func(x)
-    p = r
-    rsold = r.norm() ** 2
-
-    for _ in range(max_iter):
-        Ap = Av_func(p)
-        alpha = rsold / torch.dot(p, Ap)
-        x = x + alpha * p
-        r = r - alpha * Ap
-        rsnew = r.norm() ** 2
-        if torch.sqrt(rsnew) < residual_tol:
-            break
-        p = r + (rsnew / rsold) * p
-        rsold = rsnew
-
-    return x
-
-
-def rescale_and_linesearch(
-    g, s, Hs, max_kl, L, kld, old_params, pi, max_iter=10,
-    success_ratio=0.1
-):
-    set_params(pi, old_params)
-    L_old = L().detach()
-
-    beta = torch.sqrt((2 * max_kl) / torch.dot(s, Hs))
-
-    for _ in range(max_iter):
-        new_params = old_params + beta * s
-
-        set_params(pi, new_params)
-        kld_new = kld().detach()
-
-        L_new = L().detach()
-
-        actual_improv = L_new - L_old
-        approx_improv = torch.dot(g, beta * s)
-        ratio = actual_improv / approx_improv
-
-        if ratio > success_ratio \
-            and actual_improv > 0 \
-                and kld_new < max_kl:
-            return new_params
-
-        beta *= 0.5
-
-    print("The line search was failed!")
-    return old_params
-
-
-class TRPO:
+class GAE:
     def __init__(
         self,
         state_dim,
@@ -100,18 +26,14 @@ class TRPO:
         self.train_config = train_config
 
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
-        if self.train_config["use_baseline"]:
-            self.v = ValueNetwork(self.state_dim)
+        self.v = ValueNetwork(self.state_dim)
 
         if torch.cuda.is_available():
             for net in self.get_networks():
                 net.to(torch.device("cuda"))
 
     def get_networks(self):
-        if self.train_config["use_baseline"]:
-            return [self.pi, self.v]
-        else:
-            return [self.pi]
+        return [self.pi, self.v]
 
     def act(self, state):
         self.pi.eval()
@@ -124,18 +46,18 @@ class TRPO:
         return action
 
     def train(self, env, render=False):
-        lr = self.train_config["lr"]
         num_iters = self.train_config["num_iters"]
         num_steps_per_iter = self.train_config["num_steps_per_iter"]
         horizon = self.train_config["horizon"]
-        discount = self.train_config["discount"]
+        gamma_ = self.train_config["gamma"]
+        lambda_ = self.train_config["lambda"]
+        eps = self.train_config["epsilon"]  # ver 1
         max_kl = self.train_config["max_kl"]
         cg_damping = self.train_config["cg_damping"]
-        normalize_return = self.train_config["normalize_return"]
-        use_baseline = self.train_config["use_baseline"]
+        normalize_advantage = self.train_config["normalize_advantage"]
 
-        if use_baseline:
-            opt_v = torch.optim.Adam(self.v.parameters(), lr)
+        # lr = 1e-3  # ver 2
+        # opt_v = torch.optim.Adam(self.v.parameters(), lr)  # ver 2
 
         rwd_iter_means = []
         for i in range(num_iters):
@@ -144,13 +66,16 @@ class TRPO:
             obs = []
             acts = []
             rets = []
-            disc = []
+            advs = []
+            gms = []
 
             steps = 0
             while steps < num_steps_per_iter:
+                ep_obs = []
                 ep_rwds = []
                 ep_disc_rwds = []
-                ep_disc = []
+                ep_gms = []
+                ep_lmbs = []
 
                 t = 0
                 done = False
@@ -160,6 +85,7 @@ class TRPO:
                 while not done and steps < num_steps_per_iter:
                     act = self.act(ob)
 
+                    ep_obs.append(ob)
                     obs.append(ob)
                     acts.append(act)
 
@@ -168,8 +94,9 @@ class TRPO:
                     ob, rwd, done, info = env.step(act)
 
                     ep_rwds.append(rwd)
-                    ep_disc_rwds.append(rwd * (discount ** t))
-                    ep_disc.append(discount ** t)
+                    ep_disc_rwds.append(rwd * (gamma_ ** t))
+                    ep_gms.append(gamma_ ** t)
+                    ep_lmbs.append(lambda_ ** t)
 
                     t += 1
                     steps += 1
@@ -178,18 +105,39 @@ class TRPO:
                         if t >= horizon:
                             break
 
-                ep_disc = FloatTensor(ep_disc)
+                if done:
+                    rwd_iter.append(np.sum(ep_rwds))
+
+                ep_obs = FloatTensor(ep_obs)
+                ep_rwds = FloatTensor(ep_rwds)
+                ep_disc_rwds = FloatTensor(ep_disc_rwds)
+                ep_gms = FloatTensor(ep_gms)
+                ep_lmbs = FloatTensor(ep_lmbs)
 
                 ep_disc_rets = FloatTensor(
                     [sum(ep_disc_rwds[i:]) for i in range(t)]
                 )
-                ep_rets = ep_disc_rets / ep_disc
+                ep_rets = ep_disc_rets / ep_gms
 
                 rets.append(ep_rets)
-                disc.append(ep_disc)
 
-                if done:
-                    rwd_iter.append(np.sum(ep_rwds))
+                self.v.eval()
+                curr_vals = self.v(ep_obs).detach()
+                next_vals = torch.cat(
+                    (self.v(ep_obs)[1:], FloatTensor([[0.]]))
+                ).detach()
+                ep_deltas = ep_rwds.unsqueeze(-1)\
+                    + gamma_ * next_vals\
+                    - curr_vals
+
+                ep_advs = torch.FloatTensor([
+                    ((ep_gms * ep_lmbs)[:t - j].unsqueeze(-1) * ep_deltas[j:])
+                    .sum()
+                    for j in range(t)
+                ])
+                advs.append(ep_advs)
+
+                gms.append(ep_gms)
 
             rwd_iter_means.append(np.mean(rwd_iter))
             print(
@@ -200,21 +148,48 @@ class TRPO:
             obs = FloatTensor(obs)
             acts = FloatTensor(np.array(acts))
             rets = torch.cat(rets)
-            disc = torch.cat(disc)
+            advs = torch.cat(advs)
+            gms = torch.cat(gms)
 
-            if normalize_return:
-                rets = (rets - rets.mean()) / rets.std()
+            if normalize_advantage:
+                # rets = (rets - rets.mean()) / rets.std()
+                advs = (advs - advs.mean()) / advs.std()
 
-            if use_baseline:
-                self.v.eval()
-                delta = (rets - self.v(obs)).detach()
+            # ver 1
+            self.v.train()
+            old_params = get_flat_params(self.v).detach()
+            old_v = self.v(obs).detach()
 
-                self.v.train()
+            def constraint():
+                return ((old_v - self.v(obs)) ** 2).sum(-1).mean()
 
-                opt_v.zero_grad()
-                loss = (-1) * disc * delta * self.v(obs)
-                loss.mean().backward()
-                opt_v.step()
+            grad_diff = get_flat_grads(constraint(), self.v)
+
+            def Hv(v):
+                hessian = get_flat_grads(torch.dot(grad_diff, v), self.v)\
+                    .detach()
+
+                return hessian
+
+            g = get_flat_grads(
+                ((-1) * (self.v(obs) - rets) ** 2).sum(-1).mean(), self.v
+            ).detach()  # ver 1
+            s = conjugate_gradient(Hv, g).detach()
+
+            Hs = Hv(s).detach()
+            alpha = torch.sqrt(2 * eps / torch.dot(s, Hs))  # ver 1
+
+            new_params = old_params + alpha * s
+
+            set_params(self.v, new_params)
+
+            # ver 2
+            # self.v.train()
+
+            # opt_v.zero_grad()
+            # loss = ((-1) * (self.v(obs) - rets) ** 2).sum(-1).mean()
+            # loss.backward()
+            # opt_v.step()
 
             self.pi.train()
             old_params = get_flat_params(self.pi).detach()
@@ -223,16 +198,10 @@ class TRPO:
             def L():
                 distb = self.pi(obs)
 
-                if use_baseline:
-                    return (disc * delta * torch.exp(
-                                distb.log_prob(acts)
-                                - old_distb.log_prob(acts).detach()
-                            )).mean()
-                else:
-                    return (disc * rets * torch.exp(
-                                distb.log_prob(acts)
-                                - old_distb.log_prob(acts).detach()
-                            )).mean()
+                return (advs * torch.exp(
+                            distb.log_prob(acts)
+                            - old_distb.log_prob(acts).detach()
+                        )).mean()
 
             def kld():
                 distb = self.pi(obs)

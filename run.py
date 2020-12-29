@@ -6,6 +6,8 @@ import gym
 
 from models.pg import PolicyGradient
 from models.ac import ActorCritic
+from models.trpo import TRPO
+from models.gae import GAE
 
 
 def main(env_name, model_name, num_episodes, render):
@@ -40,11 +42,16 @@ def main(env_name, model_name, num_episodes, render):
         model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
         model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
     elif model_name == "trpo":
-        model = PolicyGradient(state_dim, action_dim, discrete, **config)
+        model = TRPO(state_dim, action_dim, discrete, **config)
 
         model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
         if config["train_config"]["use_baseline"]:
             model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
+    elif model_name == "gae":
+        model = GAE(state_dim, action_dim, discrete, **config)
+
+        model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
+        model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
 
     for _ in range(num_episodes):
         rwds = []
@@ -78,7 +85,8 @@ if __name__ == "__main__":
         "--model_name",
         type=str,
         default="pg",
-        help="Type the model name to train. The possible models are [pg, ac]"
+        help="Type the model name to train. \
+            The possible models are [pg, ac, trpo, gae]"
     )
     parser.add_argument(
         "--num_episodes",
