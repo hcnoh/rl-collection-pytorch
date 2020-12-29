@@ -51,13 +51,10 @@ class GAE:
         horizon = self.train_config["horizon"]
         gamma_ = self.train_config["gamma"]
         lambda_ = self.train_config["lambda"]
-        eps = self.train_config["epsilon"]  # ver 1
+        eps = self.train_config["epsilon"]
         max_kl = self.train_config["max_kl"]
         cg_damping = self.train_config["cg_damping"]
         normalize_advantage = self.train_config["normalize_advantage"]
-
-        # lr = 1e-3  # ver 2
-        # opt_v = torch.optim.Adam(self.v.parameters(), lr)  # ver 2
 
         rwd_iter_means = []
         for i in range(num_iters):
@@ -155,13 +152,12 @@ class GAE:
                 # rets = (rets - rets.mean()) / rets.std()
                 advs = (advs - advs.mean()) / advs.std()
 
-            # ver 1
             self.v.train()
             old_params = get_flat_params(self.v).detach()
             old_v = self.v(obs).detach()
 
             def constraint():
-                return ((old_v - self.v(obs)) ** 2).sum(-1).mean()
+                return ((old_v - self.v(obs)) ** 2).mean()
 
             grad_diff = get_flat_grads(constraint(), self.v)
 
@@ -172,24 +168,16 @@ class GAE:
                 return hessian
 
             g = get_flat_grads(
-                ((-1) * (self.v(obs) - rets) ** 2).sum(-1).mean(), self.v
-            ).detach()  # ver 1
+                ((-1) * (self.v(obs).squeeze() - rets) ** 2).mean(), self.v
+            ).detach()
             s = conjugate_gradient(Hv, g).detach()
 
             Hs = Hv(s).detach()
-            alpha = torch.sqrt(2 * eps / torch.dot(s, Hs))  # ver 1
+            alpha = torch.sqrt(2 * eps / torch.dot(s, Hs))
 
             new_params = old_params + alpha * s
 
             set_params(self.v, new_params)
-
-            # ver 2
-            # self.v.train()
-
-            # opt_v.zero_grad()
-            # loss = ((-1) * (self.v(obs) - rets) ** 2).sum(-1).mean()
-            # loss.backward()
-            # opt_v.step()
 
             self.pi.train()
             old_params = get_flat_params(self.pi).detach()

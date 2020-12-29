@@ -207,12 +207,12 @@ class TRPO:
 
             if use_baseline:
                 self.v.eval()
-                delta = (rets - self.v(obs)).detach()
+                delta = (rets - self.v(obs).squeeze()).detach()
 
                 self.v.train()
 
                 opt_v.zero_grad()
-                loss = (-1) * disc * delta * self.v(obs)
+                loss = (-1) * disc * delta * self.v(obs).squeeze()
                 loss.mean().backward()
                 opt_v.step()
 
