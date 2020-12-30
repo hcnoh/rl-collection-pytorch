@@ -20,11 +20,11 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ### The results of Pendulum environment
 
-![](/assets/img/README/README_2020-12-29-16-57-32.png)
+![](/assets/img/README/README_2020-12-30-10-44-12.png)
 
 ### The results of BipedalWalker environment
 
-![](/assets/img/README/README_2020-12-29-15-02-52.png)
+![](/assets/img/README/README_2020-12-30-09-55-57.png)
 
 ### Future Works
 - Implement PPO

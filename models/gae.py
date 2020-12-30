@@ -149,7 +149,6 @@ class GAE:
             gms = torch.cat(gms)
 
             if normalize_advantage:
-                # rets = (rets - rets.mean()) / rets.std()
                 advs = (advs - advs.mean()) / advs.std()
 
             self.v.train()
