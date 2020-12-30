@@ -70,19 +70,9 @@ def main(env_name, model_name, gpu_num):
     with open(ckpt_path + "results.pkl", "wb") as f:
         pickle.dump(results, f)
 
-    if model_name == "pg":
+    if hasattr(model, "pi"):
         torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
-        if config["train_config"]["use_baseline"]:
-            torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
-    elif model_name == "ac":
-        torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
-        torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
-    elif model_name == "trpo":
-        torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
-        if config["train_config"]["use_baseline"]:
-            torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
-    elif model_name == "gae":
-        torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
+    if hasattr(model, "v"):
         torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
 
 

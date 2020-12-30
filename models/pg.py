@@ -190,7 +190,6 @@ class PolicyGradient:
             opt_pi.zero_grad()
             if use_baseline:
                 loss = (-1) * disc * delta * distb.log_prob(acts)
-                print(loss.shape)
             else:
                 loss = (-1) * disc * distb.log_prob(acts) * rets
             loss.mean().backward()

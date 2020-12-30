@@ -110,6 +110,13 @@ class ActorCritic:
 
             disc = FloatTensor(disc)
 
+            ###
+            disc_rets = FloatTensor(
+                [sum(disc_rwds[i:]) for i in range(len(disc_rwds))]
+            )
+            rets = disc_rets / disc
+            ###
+
             self.v.eval()
             curr_vals = self.v(obs)
             next_vals = torch.cat((self.v(obs)[1:], FloatTensor([[0.]])))
@@ -121,15 +128,18 @@ class ActorCritic:
             if normalize_advantage:
                 advantage = (advantage - advantage.mean()) / advantage.std()
             # print(advantage.shape, obs.shape, disc.shape)
+            delta = (rets - self.v(obs).squeeze()).detach()
 
             self.v.train()
 
             opt_v.zero_grad()
-            loss = (0.5) * (
-                rwds.unsqueeze(-1)
-                + discount * next_vals.detach()
-                - self.v(obs)
-            ) ** 2
+            # loss = (0.5) * (
+            #     rwds.unsqueeze(-1)
+            #     + discount * next_vals.detach()
+            #     - self.v(obs)
+            # ) ** 2
+            loss = (-1) * disc * delta * self.v(obs).squeeze()
+            # loss = (0.5) * ((rets - self.v(obs).squeeze()) ** 2)
             # loss = (-1) * disc.unsqueeze(-1) * advantage * self.v(obs)
             # print(loss.shape)
             loss.mean().backward()
