@@ -58,5 +58,5 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 - Search other environments to running the algorithms
 
 
-### References
+## References
 - An explaination of TRPO line search: [link](https://jonathan-hui.medium.com/rl-trust-region-policy-optimization-trpo-part-2-f51e3b2e373a)
