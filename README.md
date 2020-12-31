@@ -17,7 +17,7 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ## Training and Running
 1. Modify `config.json` as your machine setting.
-2. Excute training process by `train.py`. An example of usage for `train.py` are following:
+2. Execute training process by `train.py`. An example of usage for `train.py` are following:
 
     ```bash
     $ python train.py --model_name=trpo --env_name=BipedalWalker-v3
