@@ -17,6 +17,10 @@ def main(env_name, model_name, num_episodes, render):
     with open(ckpt_path + "model_config.json") as f:
         config = json.load(f)
 
+    if env_name not in ["CartPole-v1", "Pendulum-v0", "BipedalWalker-v3"]:
+        print("The environment name is wrong!")
+        return
+
     env = gym.make(env_name)
     env.reset()
 
@@ -32,25 +36,16 @@ def main(env_name, model_name, num_episodes, render):
 
     if model_name == "pg":
         model = PolicyGradient(state_dim, action_dim, discrete, **config)
-
-        model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
-        if config["train_config"]["use_baseline"]:
-            model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
     elif model_name == "ac":
         model = ActorCritic(state_dim, action_dim, discrete, **config)
-
-        model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
-        model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
     elif model_name == "trpo":
         model = TRPO(state_dim, action_dim, discrete, **config)
-
-        model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
-        if config["train_config"]["use_baseline"]:
-            model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
     elif model_name == "gae":
         model = GAE(state_dim, action_dim, discrete, **config)
 
+    if hasattr(model, "pi"):
         model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
+    if hasattr(model, "v"):
         model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
 
     for _ in range(num_episodes):
