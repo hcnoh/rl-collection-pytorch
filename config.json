@@ -31,7 +31,7 @@
                 "max_kl": 0.01,
                 "cg_damping": 0.1,
                 "normalize_return": true,
-                "use_baseline": false
+                "use_baseline": true
             }
         },
         "gae": {
@@ -59,7 +59,7 @@
                 "max_kl": 0.01,
                 "cg_damping": 1e-1,
                 "normalize_return": true,
-                "use_baseline": false
+                "use_baseline": true
             }
         },
         "gae": {
@@ -87,7 +87,7 @@
                 "max_kl": 0.01,
                 "cg_damping": 1e-1,
                 "normalize_return": true,
-                "use_baseline": false
+                "use_baseline": true
             }
         },
         "gae": {
