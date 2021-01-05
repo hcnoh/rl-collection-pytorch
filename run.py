@@ -8,6 +8,7 @@ from models.pg import PolicyGradient
 from models.ac import ActorCritic
 from models.trpo import TRPO
 from models.gae import GAE
+from models.ppo import PPO
 
 
 def main(env_name, model_name, num_episodes, render):
@@ -42,6 +43,8 @@ def main(env_name, model_name, num_episodes, render):
         model = TRPO(state_dim, action_dim, discrete, **config)
     elif model_name == "gae":
         model = GAE(state_dim, action_dim, discrete, **config)
+    elif model_name == "ppo":
+        model = PPO(state_dim, action_dim, discrete, **config)
 
     if hasattr(model, "pi"):
         model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
@@ -81,7 +84,7 @@ if __name__ == "__main__":
         type=str,
         default="pg",
         help="Type the model name to train. \
-            The possible models are [pg, ac, trpo, gae]"
+            The possible models are [pg, ac, trpo, gae, ppo]"
     )
     parser.add_argument(
         "--num_episodes",

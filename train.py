@@ -10,13 +10,14 @@ from models.pg import PolicyGradient
 from models.ac import ActorCritic
 from models.trpo import TRPO
 from models.gae import GAE
+from models.ppo import PPO
 
 
 def main(env_name, model_name, gpu_num):
     if not os.path.isdir(".ckpts"):
         os.mkdir(".ckpts")
 
-    if model_name not in ["pg", "ac", "trpo", "gae"]:
+    if model_name not in ["pg", "ac", "trpo", "gae", "ppo"]:
         print("The model name is wrong!")
         return
 
@@ -58,6 +59,8 @@ def main(env_name, model_name, gpu_num):
         model = TRPO(state_dim, action_dim, discrete, **config)
     elif model_name == "gae":
         model = GAE(state_dim, action_dim, discrete, **config)
+    elif model_name == "ppo":
+        model = PPO(state_dim, action_dim, discrete, **config)
 
     if torch.cuda.is_available():
         with torch.cuda.device(gpu_num):
@@ -91,7 +94,7 @@ if __name__ == "__main__":
         type=str,
         default="pg",
         help="Type the model name to train. \
-            The possible models are [pg, ac, trpo, gae]"
+            The possible models are [pg, ac, trpo, gae, ppo]"
     )
     parser.add_argument(
         "--gpu_num",

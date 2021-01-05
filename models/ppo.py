@@ -2,8 +2,6 @@ import numpy as np
 import torch
 
 from models.nets import PolicyNetwork, ValueNetwork
-from utils.funcs import get_flat_grads, get_flat_params, set_params, \
-    conjugate_gradient, rescale_and_linesearch
 
 if torch.cuda.is_available():
     from torch.cuda import FloatTensor
@@ -46,15 +44,21 @@ class PPO:
         return action
 
     def train(self, env, render=False):
+        lr = self.train_config["lr"]
         num_iters = self.train_config["num_iters"]
         num_steps_per_iter = self.train_config["num_steps_per_iter"]
+        num_epochs = self.train_config["num_epochs"]
+        minibatch_size = self.train_config["minibatch_size"]
         horizon = self.train_config["horizon"]
         gamma_ = self.train_config["gamma"]
         lambda_ = self.train_config["lambda"]
         eps = self.train_config["epsilon"]
-        max_kl = self.train_config["max_kl"]
-        cg_damping = self.train_config["cg_damping"]
+        c1 = self.train_config["vf_coeff"]
+        c2 = self.train_config["entropy_coeff"]
         normalize_advantage = self.train_config["normalize_advantage"]
+
+        opt_pi = torch.optim.Adam(self.pi.parameters(), lr)
+        opt_v = torch.optim.Adam(self.v.parameters(), lr)
 
         rwd_iter_means = []
         for i in range(num_iters):
@@ -151,89 +155,40 @@ class PPO:
             if normalize_advantage:
                 advs = (advs - advs.mean()) / advs.std()
 
-            self.v.train()
-            old_params = get_flat_params(self.v).detach()
-            old_v = self.v(obs).detach()
-
-            def constraint():
-                return ((old_v - self.v(obs)) ** 2).mean()
-
-            grad_diff = get_flat_grads(constraint(), self.v)
-
-            def Hv(v):
-                hessian = get_flat_grads(torch.dot(grad_diff, v), self.v)\
-                    .detach()
-
-                return hessian
-
-            g = get_flat_grads(
-                ((-1) * (self.v(obs).squeeze() - rets) ** 2).mean(), self.v
-            ).detach()
-            s = conjugate_gradient(Hv, g).detach()
-
-            Hs = Hv(s).detach()
-            alpha = torch.sqrt(2 * eps / torch.dot(s, Hs))
-
-            new_params = old_params + alpha * s
-
-            set_params(self.v, new_params)
+            self.pi.eval()
+            old_log_pi = self.pi(obs).log_prob(acts).detach()
 
             self.pi.train()
-            old_params = get_flat_params(self.pi).detach()
-            old_distb = self.pi(obs)
+            self.v.train()
 
-            def L():
-                distb = self.pi(obs)
+            max_steps = num_epochs * (num_steps_per_iter // minibatch_size)
 
-                return (advs * torch.exp(
-                            distb.log_prob(acts)
-                            - old_distb.log_prob(acts).detach()
-                        )).mean()
+            for _ in range(max_steps):
+                minibatch_indices = np.random.choice(
+                    range(steps), minibatch_size, False
+                )
+                mb_obs = obs[minibatch_indices]
+                mb_acts = acts[minibatch_indices]
+                mb_advs = advs[minibatch_indices]
+                mb_rets = rets[minibatch_indices]
 
-            def kld():
-                distb = self.pi(obs)
+                mb_log_pi = self.pi(mb_obs).log_prob(mb_acts)
+                mb_old_log_pi = old_log_pi[minibatch_indices]
+                r = torch.exp(mb_log_pi - mb_old_log_pi)
 
-                if self.discrete:
-                    old_p = old_distb.probs.detach()
-                    p = distb.probs
+                L_clip = torch.minimum(
+                    r * mb_advs, torch.clip(r, 1 - eps, 1 + eps) * mb_advs
+                )
 
-                    return (old_p * (torch.log(old_p) - torch.log(p)))\
-                        .sum(-1)\
-                        .mean()
+                L_vf = (self.v(mb_obs).squeeze() - mb_rets) ** 2
 
-                else:
-                    old_mean = old_distb.mean.detach()
-                    old_cov = old_distb.covariance_matrix.sum(-1).detach()
-                    mean = distb.mean
-                    cov = distb.covariance_matrix.sum(-1)
+                S = (-1) * mb_log_pi
 
-                    return (0.5) * (
-                            (old_cov / cov).sum(-1)
-                            + (((old_mean - mean) ** 2) / cov).sum(-1)
-                            - self.action_dim
-                            + torch.log(cov).sum(-1)
-                            - torch.log(old_cov).sum(-1)
-                        ).mean()
-
-            grad_kld_old_param = get_flat_grads(kld(), self.pi)
-
-            def Hv(v):
-                hessian = get_flat_grads(
-                    torch.dot(grad_kld_old_param, v),
-                    self.pi
-                ).detach()
-
-                return hessian + cg_damping * v
-
-            g = get_flat_grads(L(), self.pi).detach()
-
-            s = conjugate_gradient(Hv, g).detach()
-            Hs = Hv(s).detach()
-
-            new_params = rescale_and_linesearch(
-                g, s, Hs, max_kl, L, kld, old_params, self.pi
-            )
-
-            set_params(self.pi, new_params)
+                opt_pi.zero_grad()
+                opt_v.zero_grad()
+                loss = (-1) * (L_clip - c1 * L_vf + c2 * S).mean()
+                loss.backward()
+                opt_pi.step()
+                opt_v.step()
 
         return rwd_iter_means
