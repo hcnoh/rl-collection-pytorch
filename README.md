@@ -1,6 +1,12 @@
 # Reinforcement Learning Collection with PyTorch
 
-This repository is a collection of reinforcement learning algorithms: Policy-Gradient, Actor-Critic, Trust Region Policy Optimization, and Generalized Advantage Estimation. (More algorithms will be added soon...)
+This repository is a collection of the following reinforcement learning algorithms:
+- **Policy-Gradient**
+- **Actor-Critic**
+- **Trust Region Policy Optimization**
+- **Generalized Advantage Estimation**
+
+More algorithms will be added on this repository.
 
 In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `CartPole-v0`, `Pendulum-v0`, and `BipedalWalker-v3` are used. You need to install them before running this repository.
 

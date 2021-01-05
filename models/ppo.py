@@ -12,7 +12,7 @@ else:
     from torch import FloatTensor
 
 
-class GAE:
+class PPO:
     def __init__(
         self,
         state_dim,

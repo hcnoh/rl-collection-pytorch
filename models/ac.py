@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from models.pg import PolicyNetwork, ValueNetwork
+from models.nets import PolicyNetwork, ValueNetwork
 
 if torch.cuda.is_available():
     from torch.cuda import FloatTensor
