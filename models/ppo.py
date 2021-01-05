@@ -174,6 +174,7 @@ class PPO:
 
                 mb_log_pi = self.pi(mb_obs).log_prob(mb_acts)
                 mb_old_log_pi = old_log_pi[minibatch_indices]
+
                 r = torch.exp(mb_log_pi - mb_old_log_pi)
 
                 L_clip = torch.minimum(

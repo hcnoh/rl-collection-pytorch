@@ -5,6 +5,7 @@ This repository is a collection of the following reinforcement learning algorith
 - **Actor-Critic**
 - **Trust Region Policy Optimization**
 - **Generalized Advantage Estimation**
+- **Proximal Policy Optimization**
 
 More algorithms will be added on this repository.
 
