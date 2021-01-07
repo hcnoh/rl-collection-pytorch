@@ -61,9 +61,8 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ## Future Works
 - Find the errors of the Actor-Critic
-- Implement PPO
 - Search other environments to running the algorithms
-
 
 ## References
 - An explaination of TRPO line search: [link](https://jonathan-hui.medium.com/rl-trust-region-policy-optimization-trpo-part-2-f51e3b2e373a)
+- Additional stability method for PPO value function: [link](https://github.com/takuseno/ppo/issues/6)

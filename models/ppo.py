@@ -156,7 +156,9 @@ class PPO:
                 advs = (advs - advs.mean()) / advs.std()
 
             self.pi.eval()
+            # self.v.eval()
             old_log_pi = self.pi(obs).log_prob(acts).detach()
+            # old_v = self.v(obs).squeeze().detach()
 
             self.pi.train()
             self.v.train()
@@ -172,7 +174,8 @@ class PPO:
                 mb_advs = advs[minibatch_indices]
                 mb_rets = rets[minibatch_indices]
 
-                mb_log_pi = self.pi(mb_obs).log_prob(mb_acts)
+                mb_distb = self.pi(mb_obs)
+                mb_log_pi = mb_distb.log_prob(mb_acts)
                 mb_old_log_pi = old_log_pi[minibatch_indices]
 
                 r = torch.exp(mb_log_pi - mb_old_log_pi)
@@ -181,9 +184,18 @@ class PPO:
                     r * mb_advs, torch.clip(r, 1 - eps, 1 + eps) * mb_advs
                 )
 
+                # This part is for the stability of value function update
+                # mb_v = self.v(mb_obs).squeeze()
+                # mb_old_v = old_v[minibatch_indices]
+
+                # mb_v_clip = mb_old_v + torch.clip(mb_v - mb_old_v, -eps, eps)
+
+                # L_vf = torch.maximum(
+                #     (mb_v - mb_rets) ** 2, (mb_v_clip - mb_rets) ** 2
+                # )
                 L_vf = (self.v(mb_obs).squeeze() - mb_rets) ** 2
 
-                S = (-1) * mb_log_pi
+                S = mb_distb.entropy()
 
                 opt_pi.zero_grad()
                 opt_v.zero_grad()
