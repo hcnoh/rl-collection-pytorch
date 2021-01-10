@@ -51,16 +51,19 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ![](/assets/img/README/README_2020-12-31-11-13-34.png)
 
+![](/assets/img/README/README_2021-01-10-11-43-32.png)
+
 ## The results of Pendulum environment
 
 ![](/assets/img/README/README_2020-12-31-11-13-42.png)
 
 ## The results of BipedalWalker environment
 
-![](/assets/img/README/README_2020-12-31-11-13-49.png)
+![](/assets/img/README/README_2021-01-10-11-44-26.png)
 
 ## Future Works
 - Find the errors of the Actor-Critic
+- Implement ACER
 - Search other environments to running the algorithms
 
 ## References

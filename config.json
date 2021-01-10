@@ -137,7 +137,7 @@
         },
         "ppo": {
             "train_config": {
-                "lr": 1e-3,
+                "lr": 3e-4,
                 "num_iters": 1000,
                 "num_steps_per_iter": 5000,
                 "num_epochs": 10,
@@ -145,9 +145,9 @@
                 "horizon": null,
                 "gamma": 0.99,
                 "lambda": 0.99,
-                "epsilon": 0.2,
+                "epsilon": 0.1,
                 "vf_coeff": 1,
-                "entropy_coeff": 0.01,
+                "entropy_coeff": 0,
                 "normalize_advantage": true
             }
         }
