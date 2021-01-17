@@ -41,8 +41,6 @@ def main(env_name, model_name, gpu_num):
     env = gym.make(env_name)
     env.reset()
 
-    print(env.action_space)
-
     state_dim = len(env.observation_space.high)
     if env_name in ["CartPole-v1"]:
         discrete = True

@@ -1,6 +1,7 @@
 import json
 import argparse
 
+import numpy as np
 import torch
 import gym
 
@@ -14,7 +15,6 @@ from models.ppo import PPO
 def main(env_name, model_name, num_episodes, render):
     ckpt_path = ".ckpts/%s/%s/" % (model_name, env_name)
 
-    print(ckpt_path)
     with open(ckpt_path + "model_config.json") as f:
         config = json.load(f)
 
@@ -24,8 +24,6 @@ def main(env_name, model_name, num_episodes, render):
 
     env = gym.make(env_name)
     env.reset()
-
-    print(env.action_space)
 
     state_dim = len(env.observation_space.high)
     if env_name in ["CartPole-v1"]:
@@ -48,10 +46,9 @@ def main(env_name, model_name, num_episodes, render):
 
     if hasattr(model, "pi"):
         model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
-    if hasattr(model, "v"):
-        model.v.load_state_dict(torch.load(ckpt_path + "value.ckpt"))
 
-    for _ in range(num_episodes):
+    rwd_mean = []
+    for i in range(1, num_episodes + 1):
         rwds = []
 
         done = False
@@ -64,9 +61,14 @@ def main(env_name, model_name, num_episodes, render):
             ob, rwd, done, info = env.step(act)
             rwds.append(rwd)
 
-        print("The total reward of the episode is %f!" % sum(rwds))
+        rwd_sum = sum(rwds)
+        print("The total reward of the episode %i is %f!" % (i, rwd_sum))
+        rwd_mean.append(rwd_sum)
 
     env.close()
+
+    rwd_mean = np.mean(rwd_mean)
+    print("The total reward mean of the all episodes is %f!" % rwd_mean)
 
 
 if __name__ == "__main__":
@@ -94,10 +96,15 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--render",
-        type=bool,
-        default=True,
+        type=str,
+        default="True",
         help="Type whether the render is on or not"
     )
     args = parser.parse_args()
 
-    main(args.env_name, args.model_name, args.num_episodes, args.render)
+    if args.render == "True":
+        render = True
+    else:
+        render = False
+
+    main(args.env_name, args.model_name, args.num_episodes, render)
