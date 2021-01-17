@@ -62,13 +62,15 @@ def main(env_name, model_name, num_episodes, render):
             rwds.append(rwd)
 
         rwd_sum = sum(rwds)
-        print("The total reward of the episode %i is %f!" % (i, rwd_sum))
+        print("The total reward of the episode %i = %f" % (i, rwd_sum))
         rwd_mean.append(rwd_sum)
 
     env.close()
 
+    rwd_std = np.std(rwd_mean)
     rwd_mean = np.mean(rwd_mean)
-    print("The total reward mean of the all episodes is %f!" % rwd_mean)
+    print("Mean = %f" % rwd_mean)
+    print("Standard Deviation = %f" % rwd_std)
 
 
 if __name__ == "__main__":
