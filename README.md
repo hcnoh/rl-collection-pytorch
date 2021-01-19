@@ -43,23 +43,21 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ## The results of CartPole environment
 
-![](/assets/img/README/README_2020-12-31-11-13-13.png)
+![](/assets/img/README/README_2021-01-19-11-04-21.png)
 
-![](/assets/img/README/README_2020-12-31-11-13-19.png)
+![](/assets/img/README/README_2021-01-19-11-04-28.png)
 
-![](/assets/img/README/README_2020-12-31-11-13-27.png)
+![](/assets/img/README/README_2021-01-19-11-04-34.png)
 
-![](/assets/img/README/README_2020-12-31-11-13-34.png)
-
-![](/assets/img/README/README_2021-01-10-11-43-32.png)
+![](/assets/img/README/README_2021-01-19-11-04-43.png)
 
 ## The results of Pendulum environment
 
-![](/assets/img/README/README_2020-12-31-11-13-42.png)
+![](/assets/img/README/README_2021-01-19-11-04-50.png)
 
 ## The results of BipedalWalker environment
 
-![](/assets/img/README/README_2021-01-10-11-44-26.png)
+![](/assets/img/README/README_2021-01-19-11-04-58.png)
 
 ## Future Works
 - Find the errors of the Actor-Critic
