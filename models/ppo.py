@@ -142,8 +142,8 @@ class PPO:
 
             rwd_iter_means.append(np.mean(rwd_iter))
             print(
-                "Iterations: %i,   Reward Mean: %f"
-                % (i + 1, np.mean(rwd_iter))
+                "Iterations: {},   Reward Mean: {}"
+                .format(i + 1, np.mean(rwd_iter))
             )
 
             obs = FloatTensor(obs)
