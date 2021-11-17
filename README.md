@@ -11,6 +11,8 @@ More algorithms will be added on this repository.
 
 In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `CartPole-v0`, `Pendulum-v0`, and `BipedalWalker-v3` are used. You need to install them before running this repository.
 
+*Note*: The environment's names could be different depending on the version of OpenAI Gym.
+
 ## Install Dependencies
 1. Install Python 3.
 2. Install the Python packages in `requirements.txt`. If you are using a virtual environment for Python package management, you can install all python packages needed by using the following bash command:
@@ -20,8 +22,6 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
     ```
 
 3. Install other packages to run OpenAI Gym environments. These are dependent on the development setting of your machine.
-
-    *Note*: The environment's names could be different depending on the version of OpenAI Gym.
 
 4. Install PyTorch. The version of PyTorch should be greater or equal than 1.7.0.
 
