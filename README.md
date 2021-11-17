@@ -20,7 +20,10 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
     ```
 
 3. Install other packages to run OpenAI Gym environments. These are dependent on the development setting of your machine.
-4. Install PyTorch. The version of PyTorch should be greater or equal than 1.7.0. This repository does not provide the CUDA usage yet. I will get them possible soon.
+
+    *Note*: The environment's names could be different depending on the version of OpenAI Gym.
+
+4. Install PyTorch. The version of PyTorch should be greater or equal than 1.7.0.
 
 ## Training and Running
 1. Modify `config.json` as your machine setting.
