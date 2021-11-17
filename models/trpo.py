@@ -29,10 +29,6 @@ class TRPO:
         if self.train_config["use_baseline"]:
             self.v = ValueNetwork(self.state_dim)
 
-        if torch.cuda.is_available():
-            for net in self.get_networks():
-                net.to(torch.device("cuda"))
-
     def get_networks(self):
         if self.train_config["use_baseline"]:
             return [self.pi, self.v]

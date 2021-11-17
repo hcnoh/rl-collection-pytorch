@@ -26,10 +26,6 @@ class ActorCritic:
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         self.v = ValueNetwork(self.state_dim)
 
-        if torch.cuda.is_available():
-            for net in self.get_networks():
-                net.to(torch.device("cuda"))
-
     def get_networks(self):
         return [self.pi, self.v]
 

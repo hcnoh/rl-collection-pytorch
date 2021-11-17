@@ -61,6 +61,7 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ## Recent Works
 - The CUDA usage is provided now.
+- Modified an error in GAE and PPO.
 
 ## Future Works
 - Find the errors of the Actor-Critic

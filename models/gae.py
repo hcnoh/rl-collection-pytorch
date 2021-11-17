@@ -28,10 +28,6 @@ class GAE:
         self.pi = PolicyNetwork(self.state_dim, self.action_dim, self.discrete)
         self.v = ValueNetwork(self.state_dim)
 
-        if torch.cuda.is_available():
-            for net in self.get_networks():
-                net.to(torch.device("cuda"))
-
     def get_networks(self):
         return [self.pi, self.v]
 
@@ -127,7 +123,7 @@ class GAE:
                     + gamma_ * next_vals\
                     - curr_vals
 
-                ep_advs = torch.FloatTensor([
+                ep_advs = FloatTensor([
                     ((ep_gms * ep_lmbs)[:t - j].unsqueeze(-1) * ep_deltas[j:])
                     .sum()
                     for j in range(t)
