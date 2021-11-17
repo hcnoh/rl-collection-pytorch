@@ -104,7 +104,7 @@ class ActorCritic(Module):
 
             rwd_iter.append(np.sum(rwds))
 
-            obs = FloatTensor(obs)
+            obs = FloatTensor(np.array(obs))
             acts = FloatTensor(np.array(acts))
             rwds = FloatTensor(rwds)
 
