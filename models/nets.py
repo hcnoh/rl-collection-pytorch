@@ -26,7 +26,7 @@ class PolicyNetwork(Module):
 
     def forward(self, states):
         if self.discrete:
-            probs = torch.softmax(self.net(states))
+            probs = torch.softmax(self.net(states), dim=-1)
             distb = Categorical(probs)
         else:
             mean = self.net(states)
