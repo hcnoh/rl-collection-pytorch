@@ -1,17 +1,20 @@
 import torch
 
+from torch.nn import Module, Sequential, Linear, Tanh, Parameter
+from torch.distributions import Categorical, MultivariateNormal
 
-class PolicyNetwork(torch.nn.Module):
-    def __init__(self, state_dim, action_dim, discrete):
-        super(PolicyNetwork, self).__init__()
-        self.net = torch.nn.Sequential(
-            torch.nn.Linear(state_dim, 50),
-            torch.nn.Tanh(),
-            torch.nn.Linear(50, 50),
-            torch.nn.Tanh(),
-            torch.nn.Linear(50, 50),
-            torch.nn.Tanh(),
-            torch.nn.Linear(50, action_dim),  # , bias=False),
+
+class PolicyNetwork(Module):
+    def __init__(self, state_dim, action_dim, discrete) -> None:
+        super().__init__()
+        self.net = Sequential(
+            Linear(state_dim, 50),
+            Tanh(),
+            Linear(50, 50),
+            Tanh(),
+            Linear(50, 50),
+            Tanh(),
+            Linear(50, action_dim),
         )
 
         self.state_dim = state_dim
@@ -19,34 +22,34 @@ class PolicyNetwork(torch.nn.Module):
         self.discrete = discrete
 
         if not self.discrete:
-            self.log_std = torch.nn.Parameter(torch.zeros(action_dim))
+            self.log_std = Parameter(torch.zeros(action_dim))
 
     def forward(self, states):
         if self.discrete:
-            probs = torch.nn.functional.softmax(self.net(states))
-            distb = torch.distributions.Categorical(probs)
+            probs = torch.softmax(self.net(states))
+            distb = Categorical(probs)
         else:
             mean = self.net(states)
 
             std = torch.exp(self.log_std)
             cov_mtx = torch.eye(self.action_dim) * (std ** 2)
 
-            distb = torch.distributions.MultivariateNormal(mean, cov_mtx)
+            distb = MultivariateNormal(mean, cov_mtx)
 
         return distb
 
 
-class ValueNetwork(torch.nn.Module):
-    def __init__(self, state_dim):
-        super(ValueNetwork, self).__init__()
-        self.net = torch.nn.Sequential(
-            torch.nn.Linear(state_dim, 50),
-            torch.nn.Tanh(),
-            torch.nn.Linear(50, 50),
-            torch.nn.Tanh(),
-            torch.nn.Linear(50, 50),
-            torch.nn.Tanh(),
-            torch.nn.Linear(50, 1),
+class ValueNetwork(Module):
+    def __init__(self, state_dim) -> None:
+        super().__init__()
+        self.net = Sequential(
+            Linear(state_dim, 50),
+            Tanh(),
+            Linear(50, 50),
+            Tanh(),
+            Linear(50, 50),
+            Tanh(),
+            Linear(50, 1),
         )
 
     def forward(self, states):
