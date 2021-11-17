@@ -14,8 +14,9 @@ from models.ppo import PPO
 
 
 def main(env_name, model_name):
-    if not os.path.isdir(".ckpts"):
-        os.mkdir(".ckpts")
+    ckpt_path = "ckpts"
+    if not os.path.isdir(ckpt_path):
+        os.mkdir(ckpt_path)
 
     if model_name not in ["pg", "ac", "trpo", "gae", "ppo"]:
         print("The model name is wrong!")
@@ -25,17 +26,18 @@ def main(env_name, model_name):
         print("The environment name is wrong!")
         return
 
-    ckpt_path = ".ckpts/%s/" % model_name
+    ckpt_path = os.path.join(ckpt_path, model_name)
     if not os.path.isdir(ckpt_path):
         os.mkdir(ckpt_path)
-    ckpt_path = ckpt_path + "%s/" % env_name
+
+    ckpt_path = os.path.join(ckpt_path, env_name)
     if not os.path.isdir(ckpt_path):
         os.mkdir(ckpt_path)
 
     with open("config.json") as f:
         config = json.load(f)[env_name][model_name]
 
-    with open(ckpt_path + "model_config.json", "w") as f:
+    with open(os.path.join(ckpt_path, "model_config.json"), "w") as f:
         json.dump(config, f, indent=4)
 
     env = gym.make(env_name)
@@ -79,13 +81,17 @@ def main(env_name, model_name):
 
     env.close()
 
-    with open(ckpt_path + "results.pkl", "wb") as f:
+    with open(os.path.join(ckpt_path, "results.pkl"), "wb") as f:
         pickle.dump(results, f)
 
     if hasattr(model, "pi"):
-        torch.save(model.pi.state_dict(), ckpt_path + "policy.ckpt")
+        torch.save(
+            model.pi.state_dict(), os.path.join(ckpt_path, "policy.ckpt")
+        )
     if hasattr(model, "v"):
-        torch.save(model.v.state_dict(), ckpt_path + "value.ckpt")
+        torch.save(
+            model.v.state_dict(), os.path.join(ckpt_path, "value.ckpt")
+        )
 
 
 if __name__ == "__main__":

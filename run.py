@@ -1,3 +1,4 @@
+import os
 import json
 import argparse
 
@@ -13,9 +14,11 @@ from models.ppo import PPO
 
 
 def main(env_name, model_name, num_episodes, render):
-    ckpt_path = ".ckpts/%s/%s/" % (model_name, env_name)
+    ckpt_path = "ckpts"
+    ckpt_path = os.path.join(ckpt_path, model_name)
+    ckpt_path = os.path.join(ckpt_path, env_name)
 
-    with open(ckpt_path + "model_config.json") as f:
+    with open(os.path.join(ckpt_path, "model_config.json")) as f:
         config = json.load(f)
 
     if env_name not in ["CartPole-v1", "Pendulum-v0", "BipedalWalker-v3"]:
@@ -33,19 +36,36 @@ def main(env_name, model_name, num_episodes, render):
         discrete = False
         action_dim = env.action_space.shape[0]
 
+    if torch.cuda.is_available():
+        device = "cuda"
+    else:
+        device = "cpu"
+
     if model_name == "pg":
-        model = PolicyGradient(state_dim, action_dim, discrete, **config)
+        model = PolicyGradient(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
     elif model_name == "ac":
-        model = ActorCritic(state_dim, action_dim, discrete, **config)
+        model = ActorCritic(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
     elif model_name == "trpo":
-        model = TRPO(state_dim, action_dim, discrete, **config)
+        model = TRPO(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
     elif model_name == "gae":
-        model = GAE(state_dim, action_dim, discrete, **config)
+        model = GAE(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
     elif model_name == "ppo":
-        model = PPO(state_dim, action_dim, discrete, **config)
+        model = PPO(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
 
     if hasattr(model, "pi"):
-        model.pi.load_state_dict(torch.load(ckpt_path + "policy.ckpt"))
+        model.pi.load_state_dict(
+            torch.load(os.path.join(ckpt_path, "policy.ckpt"))
+        )
 
     rwd_mean = []
     for i in range(1, num_episodes + 1):
