@@ -64,7 +64,9 @@ def main(env_name, model_name, num_episodes, render):
 
     if hasattr(model, "pi"):
         model.pi.load_state_dict(
-            torch.load(os.path.join(ckpt_path, "policy.ckpt"))
+            torch.load(
+                os.path.join(ckpt_path, "policy.ckpt"), map_location=device
+            )
         )
 
     rwd_mean = []
