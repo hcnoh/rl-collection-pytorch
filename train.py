@@ -13,7 +13,7 @@ from models.gae import GAE
 from models.ppo import PPO
 
 
-def main(env_name, model_name, gpu_num):
+def main(env_name, model_name):
     if not os.path.isdir(".ckpts"):
         os.mkdir(".ckpts")
 
@@ -49,22 +49,33 @@ def main(env_name, model_name, gpu_num):
         discrete = False
         action_dim = env.action_space.shape[0]
 
-    if model_name == "pg":
-        model = PolicyGradient(state_dim, action_dim, discrete, **config)
-    elif model_name == "ac":
-        model = ActorCritic(state_dim, action_dim, discrete, **config)
-    elif model_name == "trpo":
-        model = TRPO(state_dim, action_dim, discrete, **config)
-    elif model_name == "gae":
-        model = GAE(state_dim, action_dim, discrete, **config)
-    elif model_name == "ppo":
-        model = PPO(state_dim, action_dim, discrete, **config)
-
     if torch.cuda.is_available():
-        with torch.cuda.device(gpu_num):
-            results = model.train(env)
+        device = "cuda"
     else:
-        results = model.train(env)
+        device = "cpu"
+
+    if model_name == "pg":
+        model = PolicyGradient(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
+    elif model_name == "ac":
+        model = ActorCritic(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
+    elif model_name == "trpo":
+        model = TRPO(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
+    elif model_name == "gae":
+        model = GAE(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
+    elif model_name == "ppo":
+        model = PPO(
+            state_dim, action_dim, discrete, **config
+        ).to(device)
+
+    results = model.train(env)
 
     env.close()
 
@@ -93,13 +104,6 @@ if __name__ == "__main__":
         default="pg",
         help="Type the model name to train. \
             The possible models are [pg, ac, trpo, gae, ppo]"
-    )
-    parser.add_argument(
-        "--gpu_num",
-        type=int,
-        default=0,
-        help="Type the number of the GPU of your GPU mahine \
-            you want to use if possible"
     )
     args = parser.parse_args()
 

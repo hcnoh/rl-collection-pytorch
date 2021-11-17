@@ -59,6 +59,9 @@ In this repository, [OpenAI Gym](https://gym.openai.com/) environments such as `
 
 ![](/assets/img/README/README_2021-01-19-11-04-58.png)
 
+## Recent Works
+- The CUDA usage is provided now.
+
 ## Future Works
 - Find the errors of the Actor-Critic
 - Implement ACER
