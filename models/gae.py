@@ -105,7 +105,7 @@ class GAE(Module):
                 if done:
                     rwd_iter.append(np.sum(ep_rwds))
 
-                ep_obs = FloatTensor(ep_obs)
+                ep_obs = FloatTensor(np.array(ep_obs))
                 ep_rwds = FloatTensor(ep_rwds)
                 ep_disc_rwds = FloatTensor(ep_disc_rwds)
                 ep_gms = FloatTensor(ep_gms)
@@ -142,7 +142,7 @@ class GAE(Module):
                 .format(i + 1, np.mean(rwd_iter))
             )
 
-            obs = FloatTensor(obs)
+            obs = FloatTensor(np.array(obs))
             acts = FloatTensor(np.array(acts))
             rets = torch.cat(rets)
             advs = torch.cat(advs)

@@ -123,7 +123,7 @@ class TRPO(Module):
                 .format(i + 1, np.mean(rwd_iter))
             )
 
-            obs = FloatTensor(obs)
+            obs = FloatTensor(np.array(obs))
             acts = FloatTensor(np.array(acts))
             rets = torch.cat(rets)
             disc = torch.cat(disc)
