@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+from torch.nn import Module
+
 from models.nets import PolicyNetwork, ValueNetwork
 
 if torch.cuda.is_available():
@@ -10,14 +12,16 @@ else:
     from torch import FloatTensor
 
 
-class ActorCritic:
+class ActorCritic(Module):
     def __init__(
         self,
         state_dim,
         action_dim,
         discrete,
         train_config=None
-    ):
+    ) -> None:
+        super().__init__()
+
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.discrete = discrete

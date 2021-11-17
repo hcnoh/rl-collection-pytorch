@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+from torch.nn import Module
+
 from models.nets import PolicyNetwork, ValueNetwork
 from utils.funcs import get_flat_grads, get_flat_params, set_params, \
     conjugate_gradient, rescale_and_linesearch
@@ -12,14 +14,16 @@ else:
     from torch import FloatTensor
 
 
-class TRPO:
+class TRPO(Module):
     def __init__(
         self,
         state_dim,
         action_dim,
         discrete,
         train_config=None
-    ):
+    ) -> None:
+        super().__init__()
+
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.discrete = discrete
