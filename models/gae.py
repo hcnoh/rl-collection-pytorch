@@ -100,6 +100,7 @@ class GAE(Module):
 
                     if horizon is not None:
                         if t >= horizon:
+                            done = True
                             break
 
                 if done:

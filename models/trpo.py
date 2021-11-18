@@ -102,6 +102,7 @@ class TRPO(Module):
 
                     if horizon is not None:
                         if t >= horizon:
+                            done = True
                             break
 
                 ep_disc = FloatTensor(ep_disc)

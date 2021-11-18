@@ -106,6 +106,7 @@ class PolicyGradient(Module):
 
                 if horizon is not None:
                     if t >= horizon:
+                        done = True
                         break
 
             rwd_iter.append(np.sum(rwds))
